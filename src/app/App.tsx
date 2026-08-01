@@ -11,6 +11,8 @@ import { ApplicationsPage } from './pages/ApplicationsPage';
 import { FaceIDMonitorPage } from './pages/FaceIDMonitorPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { PartnershipPage } from './pages/PartnershipPage';
+import { ContactSettingsPage } from './pages/ContactSettingsPage';
 import { LoginPage } from './pages/LoginPage';
 import { api } from '../services/api';
 
@@ -50,6 +52,10 @@ export default function App() {
         return <FaceIDMonitorPage />;
       case 'reports':
         return <ReportsPage />;
+      case 'partnership':
+        return <PartnershipPage />;
+      case 'contact':
+        return <ContactSettingsPage />;
       case 'settings':
         return <SettingsPage />;
       default:

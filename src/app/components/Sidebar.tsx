@@ -8,7 +8,9 @@ import {
   FileText, 
   ScanFace, 
   BarChart3, 
-  Settings 
+  Settings,
+  Handshake,
+  Phone,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -27,6 +29,8 @@ export function Sidebar({ activeItem, onNavigate }: SidebarProps) {
     { id: 'applications', label: 'Arizalar', icon: FileText },
     { id: 'faceid', label: 'Face ID Monitor', icon: ScanFace },
     { id: 'reports', label: 'Hisobotlar', icon: BarChart3 },
+    { id: 'partnership', label: 'Hamkorlik', icon: Handshake },
+    { id: 'contact', label: 'Aloqa sozlamalari', icon: Phone },
     { id: 'settings', label: 'Tizim Sozlamalari', icon: Settings },
   ];
 
