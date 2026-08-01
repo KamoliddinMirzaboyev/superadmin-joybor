@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
-import { Building2, Users, Home, DollarSign, Calendar, FileText, ScanFace, BarChart3, Settings } from 'lucide-react';
 import { DashboardPage } from './pages/DashboardPage';
 import { UniversitiesPage } from './pages/UniversitiesPage';
 import { DormitoriesPage } from './pages/DormitoriesPage';
@@ -12,9 +11,24 @@ import { ApplicationsPage } from './pages/ApplicationsPage';
 import { FaceIDMonitorPage } from './pages/FaceIDMonitorPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { LoginPage } from './pages/LoginPage';
+import { api } from '../services/api';
 
 export default function App() {
   const [activeMenuItem, setActiveMenuItem] = useState('dashboard');
+  const [authed, setAuthed] = useState(() => !!sessionStorage.getItem('access'));
+
+  useEffect(() => {
+    if (!authed) return;
+    // token yaroqliligini yumshoq tekshirish
+    api.me().catch(() => {
+      // ba'zi rollarda /me/ cheklangan bo'lishi mumkin — logout qilmaymiz
+    });
+  }, [authed]);
+
+  if (!authed) {
+    return <LoginPage onSuccess={() => setAuthed(true)} />;
+  }
 
   const renderPage = () => {
     switch (activeMenuItem) {
@@ -43,20 +57,17 @@ export default function App() {
     }
   };
 
+  const handleLogout = () => {
+    api.logout();
+    setAuthed(false);
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
       <Sidebar activeItem={activeMenuItem} onNavigate={setActiveMenuItem} />
-
-      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <Header />
-
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {renderPage()}
-        </main>
+        <Header onLogout={handleLogout} />
+        <main className="flex-1 overflow-y-auto p-6">{renderPage()}</main>
       </div>
     </div>
   );

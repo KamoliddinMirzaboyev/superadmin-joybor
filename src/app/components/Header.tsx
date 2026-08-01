@@ -1,45 +1,58 @@
-import { Search, Bell, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Bell, LogOut } from 'lucide-react';
+import { api } from '../../services/api';
 
-export function Header() {
-  const currentTime = '2026-03-29 15:02:57';
+interface HeaderProps {
+  onLogout?: () => void;
+}
+
+export function Header({ onLogout }: HeaderProps) {
+  const [name, setName] = useState('Superadmin');
+  const [now, setNow] = useState(() => new Date().toLocaleString('uz-UZ'));
+
+  useEffect(() => {
+    api
+      .me()
+      .then((p) => {
+        const first = (p.first_name as string) || '';
+        const last = (p.last_name as string) || '';
+        const username = (p.username as string) || '';
+        setName([first, last].filter(Boolean).join(' ') || username || 'Superadmin');
+      })
+      .catch(() => {});
+    const t = setInterval(() => setNow(new Date().toLocaleString('uz-UZ')), 30000);
+    return () => clearInterval(t);
+  }, []);
 
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-      {/* Search Bar */}
-      <div className="flex-1 max-w-xl">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Global qidiruv..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
+      <div className="flex-1">
+        <p className="text-sm text-gray-500">JoyBor Superadmin · api.joy-bor.uz</p>
       </div>
 
-      {/* Right Section */}
       <div className="flex items-center gap-4">
-        {/* Add University Button */}
-        <button className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-all">
-          <Plus className="w-4 h-4" />
-          <span className="text-sm font-medium">Universitet Qo'shish</span>
-        </button>
-
-        {/* Notifications */}
-        <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+        <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors" type="button">
           <Bell className="w-5 h-5 text-gray-700" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
 
-        {/* Profile */}
         <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
           <div className="text-right">
-            <p className="text-sm font-semibold text-gray-900">Kamiliddin Mirzaboyev</p>
-            <p className="text-xs text-gray-500">Oxirgi yangilanish: {currentTime}</p>
+            <p className="text-sm font-semibold text-gray-900">{name}</p>
+            <p className="text-xs text-gray-500">{now}</p>
           </div>
           <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-white font-medium">
-            KM
+            {name.charAt(0).toUpperCase()}
           </div>
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="p-2 hover:bg-gray-100 rounded-lg"
+              title="Chiqish"
+            >
+              <LogOut className="w-5 h-5 text-gray-600" />
+            </button>
+          )}
         </div>
       </div>
     </header>

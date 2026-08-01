@@ -1,77 +1,161 @@
-import { Building2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Building2, RefreshCw, Plus } from 'lucide-react';
+import { api, unwrapList, mediaUrl } from '../../services/api';
+
+interface Uni {
+  id: number;
+  name: string;
+  address?: string;
+  description?: string;
+  contact?: string;
+  logo?: string | null;
+}
 
 export function UniversitiesPage() {
+  const [items, setItems] = useState<Uni[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await api.getUniversities();
+      setItems(unwrapList<Uni>(data));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Yuklash xatosi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const create = async () => {
+    if (!name.trim() || !address.trim()) return;
+    setSaving(true);
+    try {
+      await api.createUniversity({ name: name.trim(), address: address.trim() });
+      setName('');
+      setAddress('');
+      setShowForm(false);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Yaratish xatosi');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Universitetlar</h1>
-      <p className="text-gray-600 mb-8">Universitetlar ro'yxati va ma'lumotlari</p>
-      
-      {/* Universities Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Universitetlar</h1>
+          <p className="text-gray-600">API: GET/POST /universities/</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={load}
+            className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg text-sm font-semibold"
+          >
+            <Plus className="w-4 h-4" />
+            Qo&apos;shish
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+      )}
+
+      {showForm && (
+        <div className="mb-6 bg-white border border-gray-200 rounded-lg p-4 space-y-3 max-w-lg">
+          <input
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="Nomi *"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <input
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="Manzil *"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
+          <button
+            onClick={create}
+            disabled={saving}
+            className="px-4 py-2 bg-slate-700 text-white rounded-lg text-sm disabled:opacity-50"
+          >
+            {saving ? 'Saqlanmoqda...' : 'Saqlash'}
+          </button>
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nomi</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Turi</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Viloyat</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Talabalar</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amallar</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Nomi
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Manzil
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Kontakt
+              </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            <tr>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Toshkent Davlat Universiteti</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Davlat</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Toshkent</td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                  Faol
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">15,000</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button className="text-indigo-600 hover:text-indigo-900">Ko'rish</button>
-              </td>
-            </tr>
-            <tr>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Inha Universiteti</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Xususiy</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Toshkent</td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                  Faol
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">8,000</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button className="text-indigo-600 hover:text-indigo-900">Ko'rish</button>
-              </td>
-            </tr>
-            <tr>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Samarqand Davlat Universiteti</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Davlat</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Samarqand</td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                  Faol
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">12,000</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button className="text-indigo-600 hover:text-indigo-900">Ko'rish</button>
-              </td>
-            </tr>
+          <tbody className="divide-y divide-gray-200">
+            {loading ? (
+              <tr>
+                <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                  Yuklanmoqda...
+                </td>
+              </tr>
+            ) : items.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                  <Building2 className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                  Universitetlar yo&apos;q
+                </td>
+              </tr>
+            ) : (
+              items.map((u) => (
+                <tr key={u.id}>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    <div className="flex items-center gap-2">
+                      {u.logo && (
+                        <img
+                          src={mediaUrl(u.logo)}
+                          alt=""
+                          className="w-8 h-8 rounded object-cover"
+                        />
+                      )}
+                      {u.name}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{u.address || '—'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{u.contact || '—'}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
-      </div>
-
-      {/* Add University Button */}
-      <div className="mt-6">
-        <button className="inline-flex items-center px-4 py-2 bg-gray-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition">
-          <Building2 className="w-4 h-4 mr-2" />
-          Universitet qo'shish
-        </button>
       </div>
     </div>
   );
