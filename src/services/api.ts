@@ -83,6 +83,16 @@ export function unwrapList<T>(data: Paginated<T> | T[] | unknown): T[] {
   return [];
 }
 
+function qs(params?: Record<string, string | number | boolean | undefined | null>): string {
+  if (!params) return '';
+  const sp = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') sp.append(k, String(v));
+  });
+  const s = sp.toString();
+  return s ? `?${s}` : '';
+}
+
 /** Media URL: API ba'zan http qaytaradi */
 export function mediaUrl(url?: string | null): string {
   if (!url) return '';
@@ -111,27 +121,45 @@ export const api = {
   getStats: () => apiFetch<Record<string, unknown>>('/stats/'),
 
   getAdminUsers: (params?: { search?: string; page?: number }) => {
-    const sp = new URLSearchParams();
-    if (params?.search) sp.set('search', params.search);
-    if (params?.page) sp.set('page', String(params.page));
-    const q = sp.toString();
-    return apiFetch(`/superadmin/admin-users/${q ? `?${q}` : ''}`);
+    return apiFetch(`/superadmin/admin-users/${qs(params)}`);
   },
+
+  getSuperadminUsers: (params?: { search?: string; page?: number; role?: string }) =>
+    apiFetch(`/superadmin/users/${qs(params)}`),
+
+  createSuperadminUser: (data: Record<string, unknown>) =>
+    apiFetch('/superadmin/users/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateSuperadminUser: (id: number | string, data: Record<string, unknown>) =>
+    apiFetch(`/superadmin/users/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  deleteSuperadminUser: (id: number | string) =>
+    apiFetch(`/superadmin/users/${id}/`, { method: 'DELETE' }),
+
+  activateUser: (id: number | string) =>
+    apiFetch(`/superadmin/users/${id}/activate/`, { method: 'POST', body: '{}' }),
+
+  deactivateUser: (id: number | string) =>
+    apiFetch(`/superadmin/users/${id}/deactivate/`, { method: 'POST', body: '{}' }),
+
+  promoteUser: (id: number | string) =>
+    apiFetch(`/superadmin/users/${id}/promote/`, { method: 'POST', body: '{}' }),
+
+  demoteUser: (id: number | string) =>
+    apiFetch(`/superadmin/users/${id}/demote/`, { method: 'POST', body: '{}' }),
 
   getDormitories: (params?: {
     search?: string;
     is_active?: boolean;
     university?: number;
     page?: number;
-  }) => {
-    const sp = new URLSearchParams();
-    if (params?.search) sp.set('search', params.search);
-    if (params?.is_active !== undefined) sp.set('is_active', String(params.is_active));
-    if (params?.university) sp.set('university', String(params.university));
-    if (params?.page) sp.set('page', String(params.page));
-    const q = sp.toString();
-    return apiFetch(`/superadmin/dormitories/${q ? `?${q}` : ''}`);
-  },
+  }) => apiFetch(`/superadmin/dormitories/${qs(params)}`),
 
   createDormitory: (data: Record<string, unknown>) =>
     apiFetch('/superadmin/dormitories/', {
@@ -175,13 +203,8 @@ export const api = {
   getDormitoryComplaints: (dormitoryId: number | string) =>
     apiFetch(`/superadmin/dormitories/${dormitoryId}/complaints/`),
 
-  getUniversities: (params?: { search?: string; page?: number }) => {
-    const sp = new URLSearchParams();
-    if (params?.search) sp.set('search', params.search);
-    if (params?.page) sp.set('page', String(params.page));
-    const q = sp.toString();
-    return apiFetch(`/universities/${q ? `?${q}` : ''}`);
-  },
+  getUniversities: (params?: { search?: string; page?: number }) =>
+    apiFetch(`/universities/${qs(params)}`),
 
   createUniversity: (data: Record<string, unknown>) =>
     apiFetch('/universities/', {
@@ -198,27 +221,15 @@ export const api = {
   deleteUniversity: (id: number | string) =>
     apiFetch(`/universities/${id}/`, { method: 'DELETE' }),
 
-  getUsers: (params?: { page?: number }) => {
-    const sp = new URLSearchParams();
-    if (params?.page) sp.set('page', String(params.page));
-    const q = sp.toString();
-    return apiFetch(`/users/${q ? `?${q}` : ''}`);
-  },
+  getUsers: (params?: { page?: number }) => apiFetch(`/users/${qs(params)}`),
 
-  getApplications: (params?: { page?: number; status?: string }) => {
-    const sp = new URLSearchParams();
-    if (params?.page) sp.set('page', String(params.page));
-    if (params?.status) sp.set('status', params.status);
-    const q = sp.toString();
-    return apiFetch(`/applications/${q ? `?${q}` : ''}`);
-  },
+  getApplications: (params?: { page?: number; status?: string }) =>
+    apiFetch(`/applications/${qs(params)}`),
 
-  getPayments: (params?: { page?: number }) => {
-    const sp = new URLSearchParams();
-    if (params?.page) sp.set('page', String(params.page));
-    const q = sp.toString();
-    return apiFetch(`/payments/${q ? `?${q}` : ''}`);
-  },
+  getPayments: (params?: { page?: number }) => apiFetch(`/payments/${qs(params)}`),
+
+  getAttendanceSessions: (params?: { page?: number; date?: string }) =>
+    apiFetch(`/attendance-sessions/${qs(params)}`),
 };
 
 export default api;

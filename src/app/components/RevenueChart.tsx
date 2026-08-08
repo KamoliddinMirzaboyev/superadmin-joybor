@@ -1,38 +1,83 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useEffect, useState } from 'react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import { api, unwrapList } from '../../services/api';
 
-const data = [
-  { month: 'Yanvar', tushgan: 450, kutilayotgan: 800 },
-  { month: 'Fevral', tushgan: 520, kutilayotgan: 850 },
-  { month: 'Mart', tushgan: 480, kutilayotgan: 900 },
-  { month: 'Aprel', tushgan: 500, kutilayotgan: 950 },
-];
-
+/** Real to'lovlar ro'yxatidan oddiy agregat (mock oylik chart o'rniga). */
 export function RevenueChart() {
+  const [data, setData] = useState<Array<{ label: string; amount: number; count: number }>>(
+    []
+  );
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = await api.getPayments();
+        const list = unwrapList<Record<string, unknown>>(raw);
+        const byStatus = new Map<string, { amount: number; count: number }>();
+        for (const p of list) {
+          const status = String(p.status || p.payment_status || 'unknown');
+          const amount = Number(p.amount || p.sum || 0) || 0;
+          const cur = byStatus.get(status) || { amount: 0, count: 0 };
+          cur.amount += amount;
+          cur.count += 1;
+          byStatus.set(status, cur);
+        }
+        if (!cancelled) {
+          setData(
+            Array.from(byStatus.entries()).map(([label, v]) => ({
+              label,
+              amount: v.amount,
+              count: v.count,
+            }))
+          );
+        }
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Xato');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all">
+    <div className="bg-white border border-gray-200 rounded-lg p-6">
       <div className="mb-4">
-        <h3 className="text-lg font-bold text-gray-900">Oylik Global Daromad</h3>
-        <p className="text-sm text-gray-500">Yanvar-Aprel 2026</p>
+        <h3 className="text-lg font-bold text-gray-900">To‘lovlar holati</h3>
+        <p className="text-sm text-gray-500">`GET /payments/` real ma’lumot</p>
       </div>
-      
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="month" stroke="#6b7280" style={{ fontSize: '12px' }} />
-          <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              backdropFilter: 'blur(10px)'
-            }} 
-          />
-          <Legend wrapperStyle={{ fontSize: '12px' }} />
-          <Bar dataKey="tushgan" fill="#059669" radius={[4, 4, 0, 0]} name="Tushgan (K$)" />
-          <Bar dataKey="kutilayotgan" fill="#2563eb" radius={[4, 4, 0, 0]} name="Kutilayotgan (K$)" />
-        </BarChart>
-      </ResponsiveContainer>
+      {loading && <p className="text-sm text-gray-500">Yuklanmoqda...</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      {!loading && !error && data.length === 0 && (
+        <p className="text-sm text-gray-500">To‘lov yozuvlari yo‘q</p>
+      )}
+      {data.length > 0 && (
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="label" stroke="#6b7280" style={{ fontSize: '12px' }} />
+            <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="amount" fill="#059669" name="Summa" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="count" fill="#2563eb" name="Soni" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }
