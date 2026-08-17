@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { 
   LayoutDashboard, 
   Building2, 
@@ -12,6 +13,7 @@ import {
   Handshake,
   Phone,
 } from 'lucide-react';
+import { api } from '../../services/api';
 
 interface SidebarProps {
   activeItem: string;
@@ -19,6 +21,24 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeItem, onNavigate }: SidebarProps) {
+  const [displayName, setDisplayName] = useState('Superadmin');
+  const [initials, setInitials] = useState('SA');
+
+  useEffect(() => {
+    api
+      .me()
+      .then((p) => {
+        const first = String(p.first_name || '');
+        const last = String(p.last_name || '');
+        const username = String(p.username || '');
+        const name = [first, last].filter(Boolean).join(' ') || username || 'Superadmin';
+        setDisplayName(name);
+        const parts = name.trim().split(/\s+/);
+        setInitials(((parts[0]?.[0] || 'S') + (parts[1]?.[0] || 'A')).toUpperCase());
+      })
+      .catch(() => {});
+  }, []);
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'universities', label: 'Universitetlar', icon: Building2 },
@@ -76,10 +96,10 @@ export function Sidebar({ activeItem, onNavigate }: SidebarProps) {
       <div className="p-4 border-t border-gray-200">
         <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
           <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold">
-            KM
+            {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">Kamiliddin Mirzaboyev</p>
+            <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
             <p className="text-xs text-gray-500">Superadmin</p>
           </div>
         </div>

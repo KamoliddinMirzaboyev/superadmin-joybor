@@ -66,7 +66,8 @@ export function UsersPage() {
     u.username ||
     `#${u.id}`;
 
-  const runAction = async (fn: () => Promise<unknown>) => {
+  const runAction = async (fn: () => Promise<unknown>, confirmMessage?: string) => {
+    if (confirmMessage && !window.confirm(confirmMessage)) return;
     try {
       await fn();
       await load();
@@ -80,6 +81,12 @@ export function UsersPage() {
     if (form.password !== form.password2) {
       setError('Parollar mos emas');
       return;
+    }
+    if (form.role === 'superadmin') {
+      const ok = window.confirm(
+        "Superadmin yaratish to'liq tizim huquqini beradi. Davom etasizmi?"
+      );
+      if (!ok) return;
     }
     setSaving(true);
     setError('');
@@ -172,7 +179,12 @@ export function UsersPage() {
                           <button
                             type="button"
                             title="Nofaol"
-                            onClick={() => runAction(() => api.deactivateUser(u.id))}
+                            onClick={() =>
+                              runAction(
+                                () => api.deactivateUser(u.id),
+                                `${displayName(u)} hisobini nofaol qilmoqchimisiz?`
+                              )
+                            }
                             className="p-1.5 border rounded hover:bg-gray-50"
                           >
                             <PowerOff className="w-3.5 h-3.5" />
@@ -190,7 +202,12 @@ export function UsersPage() {
                         <button
                           type="button"
                           title="Promote"
-                          onClick={() => runAction(() => api.promoteUser(u.id))}
+                          onClick={() =>
+                            runAction(
+                              () => api.promoteUser(u.id),
+                              `${displayName(u)} rolini oshirmoqchimisiz (promote)?`
+                            )
+                          }
                           className="p-1.5 border rounded hover:bg-gray-50"
                         >
                           <ArrowUp className="w-3.5 h-3.5" />
@@ -198,7 +215,12 @@ export function UsersPage() {
                         <button
                           type="button"
                           title="Demote"
-                          onClick={() => runAction(() => api.demoteUser(u.id))}
+                          onClick={() =>
+                            runAction(
+                              () => api.demoteUser(u.id),
+                              `${displayName(u)} rolini pasaytirmoqchimisiz (demote)?`
+                            )
+                          }
                           className="p-1.5 border rounded hover:bg-gray-50"
                         >
                           <ArrowDown className="w-3.5 h-3.5" />

@@ -10,23 +10,31 @@ function clearAuth() {
   sessionStorage.removeItem('isAuth');
 }
 
+let refreshInFlight: Promise<boolean> | null = null;
+
 async function tryRefresh(): Promise<boolean> {
-  const refresh = sessionStorage.getItem('refresh');
-  if (!refresh) return false;
-  try {
-    const res = await fetch(`${API_BASE}/token/refresh/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh }),
-    });
-    if (!res.ok) return false;
-    const data = (await res.json()) as { access?: string };
-    if (!data.access) return false;
-    sessionStorage.setItem('access', data.access);
-    return true;
-  } catch {
-    return false;
-  }
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    const refresh = sessionStorage.getItem('refresh');
+    if (!refresh) return false;
+    try {
+      const res = await fetch(`${API_BASE}/token/refresh/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh }),
+      });
+      if (!res.ok) return false;
+      const data = (await res.json()) as { access?: string };
+      if (!data.access) return false;
+      sessionStorage.setItem('access', data.access);
+      return true;
+    } catch {
+      return false;
+    }
+  })().finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
 }
 
 export async function apiFetch<T = unknown>(
@@ -52,7 +60,10 @@ export async function apiFetch<T = unknown>(
     const ok = await tryRefresh();
     if (ok) return apiFetch(path, options, true);
     clearAuth();
-    throw new Error('Authentication required');
+    if (!window.location.pathname.includes('/login')) {
+      window.location.href = '/';
+    }
+    throw new Error('Sessiya tugadi. Qayta kiring.');
   }
 
   if (!res.ok) {
@@ -81,6 +92,29 @@ export function unwrapList<T>(data: Paginated<T> | T[] | unknown): T[] {
     return (data as Paginated<T>).results;
   }
   return [];
+}
+
+async function fetchAllPages<T>(
+  path: string,
+  params?: Record<string, string | number | boolean | undefined | null>
+): Promise<Paginated<T>> {
+  const results: T[] = [];
+  let page = 1;
+  let count = 0;
+  while (page <= 40) {
+    const data = await apiFetch<Paginated<T> | T[]>(
+      `${path}${qs({ ...params, page, page_size: 100 })}`
+    );
+    if (Array.isArray(data)) {
+      return { results: data, count: data.length, next: null, previous: null };
+    }
+    const batch = data.results ?? [];
+    count = typeof data.count === 'number' ? data.count : results.length + batch.length;
+    results.push(...batch);
+    if (!data.next || batch.length === 0) break;
+    page += 1;
+  }
+  return { results, count, next: null, previous: null };
 }
 
 function qs(params?: Record<string, string | number | boolean | undefined | null>): string {
@@ -120,12 +154,15 @@ export const api = {
   getDashboard: () => apiFetch<Record<string, unknown>>('/superadmin/dashboard/'),
   getStats: () => apiFetch<Record<string, unknown>>('/stats/'),
 
-  getAdminUsers: (params?: { search?: string; page?: number }) => {
-    return apiFetch(`/superadmin/admin-users/${qs(params)}`);
-  },
+  getAdminUsers: (params?: { search?: string; page?: number; page_size?: number }) =>
+    params?.page != null
+      ? apiFetch(`/superadmin/admin-users/${qs(params)}`)
+      : fetchAllPages('/superadmin/admin-users/', params),
 
-  getSuperadminUsers: (params?: { search?: string; page?: number; role?: string }) =>
-    apiFetch(`/superadmin/users/${qs(params)}`),
+  getSuperadminUsers: (params?: { search?: string; page?: number; page_size?: number; role?: string }) =>
+    params?.page != null
+      ? apiFetch(`/superadmin/users/${qs(params)}`)
+      : fetchAllPages('/superadmin/users/', params),
 
   createSuperadminUser: (data: Record<string, unknown>) =>
     apiFetch('/superadmin/users/', {
@@ -159,7 +196,11 @@ export const api = {
     is_active?: boolean;
     university?: number;
     page?: number;
-  }) => apiFetch(`/superadmin/dormitories/${qs(params)}`),
+    page_size?: number;
+  }) =>
+    params?.page != null
+      ? apiFetch(`/superadmin/dormitories/${qs(params)}`)
+      : fetchAllPages('/superadmin/dormitories/', params),
 
   createDormitory: (data: Record<string, unknown>) =>
     apiFetch('/superadmin/dormitories/', {
@@ -203,8 +244,10 @@ export const api = {
   getDormitoryComplaints: (dormitoryId: number | string) =>
     apiFetch(`/superadmin/dormitories/${dormitoryId}/complaints/`),
 
-  getUniversities: (params?: { search?: string; page?: number }) =>
-    apiFetch(`/universities/${qs(params)}`),
+  getUniversities: (params?: { search?: string; page?: number; page_size?: number }) =>
+    params?.page != null
+      ? apiFetch(`/universities/${qs(params)}`)
+      : fetchAllPages('/universities/', params),
 
   createUniversity: (data: Record<string, unknown>) =>
     apiFetch('/universities/', {
@@ -221,15 +264,23 @@ export const api = {
   deleteUniversity: (id: number | string) =>
     apiFetch(`/universities/${id}/`, { method: 'DELETE' }),
 
-  getUsers: (params?: { page?: number }) => apiFetch(`/users/${qs(params)}`),
+  getUsers: (params?: { page?: number; page_size?: number }) =>
+    params?.page != null ? apiFetch(`/users/${qs(params)}`) : fetchAllPages('/users/', params),
 
-  getApplications: (params?: { page?: number; status?: string }) =>
-    apiFetch(`/applications/${qs(params)}`),
+  getApplications: (params?: { page?: number; page_size?: number; status?: string }) =>
+    params?.page != null
+      ? apiFetch(`/applications/${qs(params)}`)
+      : fetchAllPages('/applications/', params),
 
-  getPayments: (params?: { page?: number }) => apiFetch(`/payments/${qs(params)}`),
+  getPayments: (params?: { page?: number; page_size?: number }) =>
+    params?.page != null
+      ? apiFetch(`/payments/${qs(params)}`)
+      : fetchAllPages('/payments/', params),
 
-  getAttendanceSessions: (params?: { page?: number; date?: string }) =>
-    apiFetch(`/attendance-sessions/${qs(params)}`),
+  getAttendanceSessions: (params?: { page?: number; page_size?: number; date?: string }) =>
+    params?.page != null
+      ? apiFetch(`/attendance-sessions/${qs(params)}`)
+      : fetchAllPages('/attendance-sessions/', params),
 };
 
 export default api;

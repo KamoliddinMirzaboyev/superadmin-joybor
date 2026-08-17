@@ -20,11 +20,22 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
       sessionStorage.setItem('access', tokens.access);
       sessionStorage.setItem('refresh', tokens.refresh);
       sessionStorage.setItem('isAuth', 'true');
-      // profil tekshiruv (ixtiyoriy)
       try {
-        await api.me();
+        const me = await api.me();
+        const role = String(me.role || me.is_super_admin || '').toLowerCase();
+        const isSuper =
+          Boolean(me.is_super_admin) ||
+          role.includes('superadmin') ||
+          role.includes('super_admin') ||
+          role === 'superadmin';
+        if (role && !isSuper && !role.includes('admin')) {
+          api.logout();
+          setError('Bu hisob superadmin emas.');
+          return;
+        }
+        if (me.role) sessionStorage.setItem('userRole', String(me.role));
       } catch {
-        // token ishlasa ham /me/ cheklangan bo'lishi mumkin
+        // /me/ cheklangan bo'lsa token bilan davom etamiz
       }
       onSuccess();
     } catch (err) {

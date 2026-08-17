@@ -53,10 +53,10 @@ export function ApplicationsPage() {
             className="px-3 py-2 border rounded-lg text-sm"
           >
             <option value="">Barchasi</option>
-            <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
-            <option value="Rejected">Rejected</option>
-            <option value="Cancelled">Cancelled</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="CANCELLED">Cancelled</option>
           </select>
           <button onClick={load} className="p-2 border rounded-lg">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />

@@ -15,8 +15,9 @@ import { PartnershipPage } from './pages/PartnershipPage';
 import { ContactSettingsPage } from './pages/ContactSettingsPage';
 import { LoginPage } from './pages/LoginPage';
 import { api } from '../services/api';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
-export default function App() {
+function AppInner() {
   const [activeMenuItem, setActiveMenuItem] = useState('dashboard');
   const [authed, setAuthed] = useState(() => !!sessionStorage.getItem('access'));
 
@@ -76,5 +77,13 @@ export default function App() {
         <main className="flex-1 overflow-y-auto p-6">{renderPage()}</main>
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppInner />
+    </ErrorBoundary>
   );
 }
