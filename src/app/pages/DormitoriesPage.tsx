@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Home, RefreshCw, Power, PowerOff, Plus, Pencil, Trash2 } from 'lucide-react';
 import { api, unwrapList, mediaUrl } from '../../services/api';
+import { CardsSkeleton } from '../components/Skeleton';
 
 interface Dorm {
   id: number;
@@ -158,8 +159,8 @@ export function DormitoriesPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Yotoqxonalar</h1>
-          <p className="text-gray-600">Superadmin API — barcha yotoqxonalar</p>
+          <h1 className="text-3xl font-bold text-surface-900">Yotoqxonalar</h1>
+          <p className="text-surface-600">Barcha yotoqxonalarni boshqarish</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <input
@@ -167,17 +168,17 @@ export function DormitoriesPage() {
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && load()}
             placeholder="Qidirish..."
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            className="px-3 py-2 border border-surface-200 rounded-xl text-sm"
           />
           <button
             onClick={load}
-            className="inline-flex items-center px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50"
+            className="inline-flex items-center px-3 py-2 border border-surface-200 rounded-xl text-sm hover:bg-surface-50"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={() => (showCreate ? cancelForm() : setShowCreate(true))}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 text-white rounded-lg text-sm"
+            className="inline-flex items-center gap-2 px-3 py-2 bg-brand-600 text-white rounded-xl text-sm"
           >
             <Plus className="w-4 h-4" />
             Yangi yotoqxona
@@ -186,42 +187,42 @@ export function DormitoriesPage() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+        <div className="mb-4 p-3 rounded-xl bg-danger-50 text-danger-700 text-sm">{error}</div>
       )}
 
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="mb-6 bg-white border border-gray-200 rounded-lg p-4 grid grid-cols-1 sm:grid-cols-2 gap-3"
+          className="mb-6 bg-white border border-surface-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3"
         >
-          <div className="sm:col-span-2 text-sm font-medium text-gray-700">
+          <div className="sm:col-span-2 text-sm font-medium text-surface-700">
             {editingId ? `Tahrirlash: ${form.name || `#${editingId}`}` : 'Yangi yotoqxona'}
           </div>
           <label className="text-sm sm:col-span-2">
-            <span className="text-gray-600">Nomi *</span>
+            <span className="text-surface-600">Nomi *</span>
             <input
               required
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="mt-1 w-full px-3 py-2 border rounded-lg"
+              className="mt-1 w-full px-3 py-2 border rounded-xl"
             />
           </label>
           <label className="text-sm sm:col-span-2">
-            <span className="text-gray-600">Manzil *</span>
+            <span className="text-surface-600">Manzil *</span>
             <input
               required
               value={form.address}
               onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-              className="mt-1 w-full px-3 py-2 border rounded-lg"
+              className="mt-1 w-full px-3 py-2 border rounded-xl"
             />
           </label>
           <label className="text-sm">
-            <span className="text-gray-600">Universitet *</span>
+            <span className="text-surface-600">Universitet *</span>
             <select
               required
               value={form.university}
               onChange={(e) => setForm((f) => ({ ...f, university: e.target.value }))}
-              className="mt-1 w-full px-3 py-2 border rounded-lg"
+              className="mt-1 w-full px-3 py-2 border rounded-xl"
             >
               <option value="">Tanlang</option>
               {unis.map((u) => (
@@ -232,12 +233,12 @@ export function DormitoriesPage() {
             </select>
           </label>
           <label className="text-sm">
-            <span className="text-gray-600">Admin *</span>
+            <span className="text-surface-600">Admin *</span>
             <select
               required
               value={form.admin}
               onChange={(e) => setForm((f) => ({ ...f, admin: e.target.value }))}
-              className="mt-1 w-full px-3 py-2 border rounded-lg"
+              className="mt-1 w-full px-3 py-2 border rounded-xl"
             >
               <option value="">Tanlang</option>
               {admins.map((a) => (
@@ -250,37 +251,37 @@ export function DormitoriesPage() {
             </select>
           </label>
           <label className="text-sm">
-            <span className="text-gray-600">Oylik narx</span>
+            <span className="text-surface-600">Oylik narx</span>
             <input
               type="number"
               value={form.month_price}
               onChange={(e) => setForm((f) => ({ ...f, month_price: e.target.value }))}
-              className="mt-1 w-full px-3 py-2 border rounded-lg"
+              className="mt-1 w-full px-3 py-2 border rounded-xl"
             />
           </label>
           <label className="text-sm">
-            <span className="text-gray-600">Yillik narx</span>
+            <span className="text-surface-600">Yillik narx</span>
             <input
               type="number"
               value={form.year_price}
               onChange={(e) => setForm((f) => ({ ...f, year_price: e.target.value }))}
-              className="mt-1 w-full px-3 py-2 border rounded-lg"
+              className="mt-1 w-full px-3 py-2 border rounded-xl"
             />
           </label>
           <label className="text-sm">
-            <span className="text-gray-600">Telefon</span>
+            <span className="text-surface-600">Telefon</span>
             <input
               value={form.phone_numer}
               onChange={(e) => setForm((f) => ({ ...f, phone_numer: e.target.value }))}
-              className="mt-1 w-full px-3 py-2 border rounded-lg"
+              className="mt-1 w-full px-3 py-2 border rounded-xl"
             />
           </label>
           <label className="text-sm sm:col-span-2">
-            <span className="text-gray-600">Tavsif</span>
+            <span className="text-surface-600">Tavsif</span>
             <textarea
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              className="mt-1 w-full px-3 py-2 border rounded-lg"
+              className="mt-1 w-full px-3 py-2 border rounded-xl"
               rows={2}
             />
           </label>
@@ -288,11 +289,11 @@ export function DormitoriesPage() {
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm disabled:opacity-50"
+              className="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-50"
             >
               {saving ? 'Saqlanmoqda...' : editingId ? 'Saqlash' : 'Yaratish'}
             </button>
-            <button type="button" onClick={cancelForm} className="px-4 py-2 border rounded-lg text-sm">
+            <button type="button" onClick={cancelForm} className="px-4 py-2 border rounded-xl text-sm">
               Bekor
             </button>
           </div>
@@ -300,10 +301,10 @@ export function DormitoriesPage() {
       )}
 
       {loading ? (
-        <p className="text-gray-500">Yuklanmoqda...</p>
+        <CardsSkeleton />
       ) : items.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-10 text-center text-gray-500">
-          <Home className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+        <div className="bg-white border border-surface-200 rounded-xl p-10 text-center text-surface-500">
+          <Home className="w-10 h-10 mx-auto mb-3 text-surface-300" />
           Yotoqxonalar topilmadi
         </div>
       ) : (
@@ -321,7 +322,7 @@ export function DormitoriesPage() {
             return (
               <div
                 key={d.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+                className="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden"
               >
                 {img && (
                   <img
@@ -333,22 +334,22 @@ export function DormitoriesPage() {
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{d.name}</h3>
-                      <p className="text-sm text-gray-500">
+                      <h3 className="text-lg font-semibold text-surface-900">{d.name}</h3>
+                      <p className="text-sm text-surface-500">
                         {d.university_name || d.address || '—'}
                       </p>
                     </div>
                     <span
                       className={`text-xs font-semibold px-2 py-1 rounded-full ${
                         d.is_active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-600'
+                          ? 'bg-success-100 text-success-800'
+                          : 'bg-surface-100 text-surface-600'
                       }`}
                     >
                       {d.is_active ? 'Faol' : 'Nofaol'}
                     </span>
                   </div>
-                  <div className="space-y-1 text-sm text-gray-600">
+                  <div className="space-y-1 text-sm text-surface-600">
                     <p>
                       Admin: <span className="font-medium">{d.admin_name || '—'}</span>
                     </p>
@@ -368,7 +369,7 @@ export function DormitoriesPage() {
                   <div className="mt-4 flex flex-wrap gap-2">
                     <button
                       onClick={() => toggleActive(d)}
-                      className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-gray-200 hover:bg-gray-50"
+                      className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-surface-200 hover:bg-surface-50"
                     >
                       {d.is_active ? (
                         <>
@@ -382,13 +383,13 @@ export function DormitoriesPage() {
                     </button>
                     <button
                       onClick={() => startEdit(d)}
-                      className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-gray-200 hover:bg-gray-50"
+                      className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-surface-200 hover:bg-surface-50"
                     >
                       <Pencil className="w-4 h-4" /> Tahrirlash
                     </button>
                     <button
                       onClick={() => handleDelete(d)}
-                      className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-gray-200 hover:bg-red-50 text-red-600"
+                      className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-surface-200 hover:bg-danger-50 text-danger-600"
                     >
                       <Trash2 className="w-4 h-4" /> O&apos;chirish
                     </button>

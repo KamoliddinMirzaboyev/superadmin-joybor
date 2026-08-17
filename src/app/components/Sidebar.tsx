@@ -1,17 +1,14 @@
 import { useEffect, useState } from 'react';
-import { 
-  LayoutDashboard, 
-  Building2, 
-  Home, 
-  Users, 
-  Coins, 
-  Calendar, 
-  FileText, 
-  ScanFace, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  Building2,
+  Home,
+  Users,
+  Coins,
+  Calendar,
+  FileText,
+  BarChart3,
   Settings,
-  Handshake,
-  Phone,
 } from 'lucide-react';
 import { api } from '../../services/api';
 
@@ -19,6 +16,18 @@ interface SidebarProps {
   activeItem: string;
   onNavigate: (item: string) => void;
 }
+
+const menuItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'universities', label: 'Universitetlar', icon: Building2 },
+  { id: 'dormitories', label: 'Yotoqxonalar', icon: Home },
+  { id: 'users', label: 'Foydalanuvchilar', icon: Users },
+  { id: 'payments', label: "To'lovlar", icon: Coins },
+  { id: 'attendance', label: 'Davomat', icon: Calendar },
+  { id: 'applications', label: 'Arizalar', icon: FileText },
+  { id: 'reports', label: 'Hisobotlar', icon: BarChart3 },
+  { id: 'settings', label: 'Sozlamalar', icon: Settings },
+];
 
 export function Sidebar({ activeItem, onNavigate }: SidebarProps) {
   const [displayName, setDisplayName] = useState('Superadmin');
@@ -39,71 +48,56 @@ export function Sidebar({ activeItem, onNavigate }: SidebarProps) {
       .catch(() => {});
   }, []);
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'universities', label: 'Universitetlar', icon: Building2 },
-    { id: 'dormitories', label: 'Yotoqxonalar', icon: Home },
-    { id: 'users', label: 'Foydalanuvchilar', icon: Users },
-    { id: 'payments', label: 'To\'lovlar', icon: Coins },
-    { id: 'attendance', label: 'Davomat', icon: Calendar },
-    { id: 'applications', label: 'Arizalar', icon: FileText },
-    { id: 'faceid', label: 'Face ID Monitor', icon: ScanFace },
-    { id: 'reports', label: 'Hisobotlar', icon: BarChart3 },
-    { id: 'partnership', label: 'Hamkorlik', icon: Handshake },
-    { id: 'contact', label: 'Aloqa sozlamalari', icon: Phone },
-    { id: 'settings', label: 'Tizim Sozlamalari', icon: Settings },
-  ];
-
   return (
-    <div className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
+    <aside className="w-64 h-full bg-white border-r border-surface-200 flex flex-col">
+      <div className="px-5 py-5 border-b border-surface-200">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center">
-            <span className="text-white text-lg font-medium">JB</span>
+          <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white font-bold">
+            JB
           </div>
           <div>
-            <h1 className="font-bold text-lg text-gray-900">JoyBor</h1>
-            <p className="text-xs text-gray-500">Superadmin Panel</p>
+            <h1 className="font-bold text-surface-900 leading-tight">JoyBor</h1>
+            <p className="text-xs text-surface-500">Superadmin</p>
           </div>
         </div>
       </div>
 
-      {/* Menu Items */}
-      <div className="flex-1 overflow-y-auto py-4 px-3">
+      <nav className="flex-1 overflow-y-auto py-4 px-3">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeItem === item.id;
-          
           return (
             <button
               key={item.id}
+              type="button"
               onClick={() => onNavigate(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-all ${
-                isActive 
-                  ? 'bg-slate-800 text-white shadow-sm' 
-                  : 'text-gray-700 hover:bg-gray-100'
+              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 text-sm font-medium transition-colors duration-150 ${
+                isActive
+                  ? 'bg-brand-50 text-brand-700'
+                  : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900'
               }`}
             >
-              <Icon className="w-5 h-5" />
-              <span className="flex-1 text-left text-sm font-medium">{item.label}</span>
+              {isActive && (
+                <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-brand-600" />
+              )}
+              <Icon className={`w-5 h-5 ${isActive ? 'text-brand-600' : 'text-surface-400'}`} />
+              <span className="truncate">{item.label}</span>
             </button>
           );
         })}
-      </div>
+      </nav>
 
-      {/* User Profile */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
-          <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold">
+      <div className="p-4 border-t border-surface-200">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-50 border border-surface-200">
+          <div className="w-10 h-10 rounded-full bg-brand-600 flex items-center justify-center text-white text-sm font-semibold">
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
-            <p className="text-xs text-gray-500">Superadmin</p>
+            <p className="text-sm font-semibold text-surface-900 truncate">{displayName}</p>
+            <p className="text-xs text-surface-500">Superadmin</p>
           </div>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }

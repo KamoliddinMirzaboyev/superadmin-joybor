@@ -46,24 +46,30 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-8 space-y-4"
+        className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-surface-200 p-8 space-y-4"
       >
-        <div className="text-center mb-2">
-          <h1 className="text-2xl font-bold text-gray-900">JoyBor Superadmin</h1>
-          <p className="text-sm text-gray-500 mt-1">API orqali boshqaruv paneli</p>
+        <div className="text-center mb-4">
+          <div className="w-14 h-14 mx-auto mb-3 bg-brand-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg">
+            JB
+          </div>
+          <h1 className="text-2xl font-bold text-surface-900">Xush kelibsiz</h1>
+          <p className="text-sm text-surface-500 mt-1">JoyBor Superadmin paneliga kirish</p>
         </div>
         {error && (
-          <div className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+          <div className="text-sm text-danger-700 bg-danger-50 border border-danger-100 rounded-xl px-3 py-2">
             {error}
           </div>
         )}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Login</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1" htmlFor="login">
+            Login
+          </label>
           <input
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+            id="login"
+            className="w-full px-3 py-2.5 border border-surface-300 rounded-xl bg-white text-surface-900 focus:ring-2 focus:ring-brand-500/40 focus:border-brand-600 outline-none transition-colors duration-150"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
@@ -71,10 +77,13 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Parol</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1" htmlFor="password">
+            Parol
+          </label>
           <input
+            id="password"
             type="password"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+            className="w-full px-3 py-2.5 border border-surface-300 rounded-xl bg-white text-surface-900 focus:ring-2 focus:ring-brand-500/40 focus:border-brand-600 outline-none transition-colors duration-150"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
@@ -84,7 +93,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 bg-slate-700 text-white rounded-lg font-semibold hover:bg-slate-800 disabled:opacity-50"
+          className="w-full py-2.5 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors duration-150"
         >
           {loading ? 'Kirilmoqda...' : 'Kirish'}
         </button>

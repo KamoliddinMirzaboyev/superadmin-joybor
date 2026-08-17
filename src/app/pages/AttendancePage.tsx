@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { apiFetch, unwrapList } from '../../services/api';
+import { TableSkeleton } from '../components/Skeleton';
 
 interface Session {
   id: number;
@@ -36,41 +37,38 @@ export function AttendancePage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Davomat</h1>
-          <p className="text-gray-600">GET /attendance-sessions/</p>
+          <h1 className="text-3xl font-bold text-surface-900">Davomat</h1>
+          <p className="text-surface-600">Davomat sessiyalari</p>
         </div>
-        <button onClick={load} className="p-2 border rounded-lg">
+        <button onClick={load} className="p-2 border rounded-xl">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+        <div className="mb-4 p-3 rounded-xl bg-danger-50 text-danger-700 text-sm">{error}</div>
       )}
-      <div className="bg-white rounded-lg border overflow-hidden">
+      {loading ? (
+        <TableSkeleton cols={3} />
+      ) : (
+      <div className="bg-white rounded-xl border overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-surface-50 border-b">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase">
                 Sana
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase">
                 Qavat
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase">
                 Sardor
               </th>
             </tr>
           </thead>
           <tbody className="divide-y">
-            {loading ? (
+            {items.length === 0 ? (
               <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-gray-500">
-                  Yuklanmoqda...
-                </td>
-              </tr>
-            ) : items.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={3} className="px-4 py-8 text-center text-surface-500">
                   Sessiyalar yo&apos;q
                 </td>
               </tr>
@@ -86,6 +84,7 @@ export function AttendancePage() {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }

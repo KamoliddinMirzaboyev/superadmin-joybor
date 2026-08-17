@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { api, unwrapList } from '../../services/api';
+import { ReportsSkeleton } from '../components/Skeleton';
 
 type Stats = Record<string, unknown>;
 
@@ -76,38 +77,38 @@ export function ReportsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Hisobotlar</h1>
-          <p className="text-gray-600">
-            `/stats/` + `/superadmin/dashboard/` + yotoqxonalar
+          <h1 className="text-3xl font-bold text-surface-900">Hisobotlar</h1>
+          <p className="text-surface-600">
+            Universitet, yotoqxona va foydalanuvchi statistikasi
           </p>
         </div>
-        <button onClick={load} className="p-2 border rounded-lg">
+        <button onClick={load} className="p-2 border rounded-xl">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+        <div className="mb-4 p-3 rounded-xl bg-danger-50 text-danger-700 text-sm">{error}</div>
       )}
       {loading ? (
-        <p className="text-gray-500">Yuklanmoqda...</p>
+        <ReportsSkeleton />
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
             {cards.map((c) => (
               <div
                 key={c.label}
-                className="bg-white border border-gray-200 rounded-lg p-4"
+                className="bg-white border border-surface-200 rounded-xl p-4"
               >
-                <p className="text-xs text-gray-500 uppercase tracking-wide">{c.label}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{c.value}</p>
+                <p className="text-xs text-surface-500 uppercase tracking-wide">{c.label}</p>
+                <p className="text-2xl font-bold text-surface-900 mt-1">{c.value}</p>
               </div>
             ))}
           </div>
 
           <h2 className="text-lg font-semibold mb-3">Yotoqxonalar</h2>
-          <div className="bg-white border rounded-lg overflow-hidden mb-6">
+          <div className="bg-white border rounded-xl overflow-hidden mb-6">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-surface-50 border-b">
                 <tr>
                   <th className="px-4 py-2 text-left">Nomi</th>
                   <th className="px-4 py-2 text-left">Universitet</th>
@@ -118,7 +119,7 @@ export function ReportsPage() {
               <tbody className="divide-y">
                 {dorms.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
+                    <td colSpan={4} className="px-4 py-6 text-center text-surface-500">
                       Bo‘sh
                     </td>
                   </tr>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw, UserPlus, Power, PowerOff, ArrowUp, ArrowDown, Pencil, Trash2 } from 'lucide-react';
 import { api, unwrapList } from '../../services/api';
+import { TableSkeleton } from '../components/Skeleton';
 
 interface AppUser {
   id: number;
@@ -157,25 +158,25 @@ export function UsersPage() {
 
   const renderTable = (title: string, rows: AppUser[], withActions = false) => (
     <div className="mb-8">
-      <h2 className="text-lg font-semibold text-gray-900 mb-3">{title}</h2>
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <h2 className="text-lg font-semibold text-surface-900 mb-3">{title}</h2>
+      <div className="bg-white rounded-xl border border-surface-200 overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-surface-50 border-b">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase">
                 Foydalanuvchi
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase">
                 Rol
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase">
                 Tel / Email
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase">
                 Status
               </th>
               {withActions && (
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase">
                   Amallar
                 </th>
               )}
@@ -186,7 +187,7 @@ export function UsersPage() {
               <tr>
                 <td
                   colSpan={withActions ? 5 : 4}
-                  className="px-4 py-6 text-center text-gray-500 text-sm"
+                  className="px-4 py-6 text-center text-surface-500 text-sm"
                 >
                   Bo‘sh
                 </td>
@@ -194,22 +195,22 @@ export function UsersPage() {
             ) : (
               rows.map((u) => (
                 <tr key={`${title}-${u.id}`}>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                  <td className="px-4 py-3 text-sm font-medium text-surface-900">
                     {displayName(u)}
                     {u.username && (
-                      <div className="text-xs text-gray-500">@{u.username}</div>
+                      <div className="text-xs text-surface-500">@{u.username}</div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{u.role || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
+                  <td className="px-4 py-3 text-sm text-surface-600">{u.role || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-surface-600">
                     {u.phone || u.email || '-'}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         u.is_active !== false
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-600'
+                          ? 'bg-success-100 text-success-700'
+                          : 'bg-surface-100 text-surface-600'
                       }`}
                     >
                       {u.is_active !== false ? 'Faol' : 'Nofaol'}
@@ -228,7 +229,7 @@ export function UsersPage() {
                                 `${displayName(u)} hisobini nofaol qilmoqchimisiz?`
                               )
                             }
-                            className="p-1.5 border rounded hover:bg-gray-50"
+                            className="p-1.5 border rounded hover:bg-surface-50"
                           >
                             <PowerOff className="w-3.5 h-3.5" />
                           </button>
@@ -237,7 +238,7 @@ export function UsersPage() {
                             type="button"
                             title="Faollashtirish"
                             onClick={() => runAction(() => api.activateUser(u.id))}
-                            className="p-1.5 border rounded hover:bg-gray-50"
+                            className="p-1.5 border rounded hover:bg-surface-50"
                           >
                             <Power className="w-3.5 h-3.5" />
                           </button>
@@ -251,7 +252,7 @@ export function UsersPage() {
                               `${displayName(u)} rolini oshirmoqchimisiz (promote)?`
                             )
                           }
-                          className="p-1.5 border rounded hover:bg-gray-50"
+                          className="p-1.5 border rounded hover:bg-surface-50"
                         >
                           <ArrowUp className="w-3.5 h-3.5" />
                         </button>
@@ -264,7 +265,7 @@ export function UsersPage() {
                               `${displayName(u)} rolini pasaytirmoqchimisiz (demote)?`
                             )
                           }
-                          className="p-1.5 border rounded hover:bg-gray-50"
+                          className="p-1.5 border rounded hover:bg-surface-50"
                         >
                           <ArrowDown className="w-3.5 h-3.5" />
                         </button>
@@ -272,7 +273,7 @@ export function UsersPage() {
                           type="button"
                           title="Tahrirlash"
                           onClick={() => startEdit(u)}
-                          className="p-1.5 border rounded hover:bg-gray-50"
+                          className="p-1.5 border rounded hover:bg-surface-50"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
@@ -285,7 +286,7 @@ export function UsersPage() {
                               `${displayName(u)} hisobini butunlay o'chirmoqchimisiz? Bu amalni orqaga qaytarib bo'lmaydi.`
                             )
                           }
-                          className="p-1.5 border rounded hover:bg-red-50 text-red-600"
+                          className="p-1.5 border rounded hover:bg-danger-50 text-danger-600"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -305,8 +306,8 @@ export function UsersPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Foydalanuvchilar</h1>
-          <p className="text-gray-600">Superadmin users API</p>
+          <h1 className="text-3xl font-bold text-surface-900">Foydalanuvchilar</h1>
+          <p className="text-surface-600">Adminlar va barcha foydalanuvchilar</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <input
@@ -314,17 +315,17 @@ export function UsersPage() {
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && load()}
             placeholder="Qidirish..."
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            className="px-3 py-2 border border-surface-200 rounded-xl text-sm"
           />
           <button
             onClick={load}
-            className="inline-flex items-center px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50"
+            className="inline-flex items-center px-3 py-2 border border-surface-200 rounded-xl text-sm hover:bg-surface-50"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={() => (showCreate ? cancelForm() : setShowCreate(true))}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 text-white rounded-lg text-sm"
+            className="inline-flex items-center gap-2 px-3 py-2 bg-brand-600 text-white rounded-xl text-sm"
           >
             <UserPlus className="w-4 h-4" />
             Yangi user
@@ -333,15 +334,15 @@ export function UsersPage() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+        <div className="mb-4 p-3 rounded-xl bg-danger-50 text-danger-700 text-sm">{error}</div>
       )}
 
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="mb-6 bg-white border border-gray-200 rounded-lg p-4 grid grid-cols-1 sm:grid-cols-2 gap-3"
+          className="mb-6 bg-white border border-surface-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3"
         >
-          <div className="sm:col-span-2 text-sm font-medium text-gray-700">
+          <div className="sm:col-span-2 text-sm font-medium text-surface-700">
             {editingId ? `Tahrirlash: #${editingId}` : 'Yangi foydalanuvchi'}
           </div>
           {(
@@ -356,22 +357,22 @@ export function UsersPage() {
             ] as const
           ).map(([key, label]) => (
             <label key={key} className="text-sm">
-              <span className="text-gray-600">{label}</span>
+              <span className="text-surface-600">{label}</span>
               <input
                 type={key.includes('password') ? 'password' : 'text'}
                 required={key === 'username' || (key.includes('password') && !editingId)}
                 value={form[key]}
                 onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                className="mt-1 w-full px-3 py-2 border rounded-lg"
+                className="mt-1 w-full px-3 py-2 border rounded-xl"
               />
             </label>
           ))}
           <label className="text-sm">
-            <span className="text-gray-600">Rol *</span>
+            <span className="text-surface-600">Rol *</span>
             <select
               value={form.role}
               onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-              className="mt-1 w-full px-3 py-2 border rounded-lg"
+              className="mt-1 w-full px-3 py-2 border rounded-xl"
             >
               <option value="admin">admin</option>
               <option value="student">student</option>
@@ -383,11 +384,11 @@ export function UsersPage() {
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm disabled:opacity-50"
+              className="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-50"
             >
               {saving ? 'Saqlanmoqda...' : editingId ? 'Saqlash' : 'Yaratish'}
             </button>
-            <button type="button" onClick={cancelForm} className="px-4 py-2 border rounded-lg text-sm">
+            <button type="button" onClick={cancelForm} className="px-4 py-2 border rounded-xl text-sm">
               Bekor
             </button>
           </div>
@@ -395,7 +396,10 @@ export function UsersPage() {
       )}
 
       {loading ? (
-        <p className="text-gray-500">Yuklanmoqda...</p>
+        <div className="space-y-6">
+          <TableSkeleton cols={4} rows={4} />
+          <TableSkeleton cols={5} rows={6} />
+        </div>
       ) : (
         <>
           {renderTable('Admin foydalanuvchilar', admins)}
