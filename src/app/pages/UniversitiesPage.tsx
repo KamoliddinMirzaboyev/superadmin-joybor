@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Building2, RefreshCw, Plus } from 'lucide-react';
+import { Building2, RefreshCw, Plus, Pencil, Trash2 } from 'lucide-react';
 import { api, unwrapList, mediaUrl } from '../../services/api';
 
 interface Uni {
@@ -16,6 +16,7 @@ export function UniversitiesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [saving, setSaving] = useState(false);
@@ -37,19 +38,45 @@ export function UniversitiesPage() {
     load();
   }, []);
 
+  const cancelForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setName('');
+    setAddress('');
+  };
+
+  const startEdit = (u: Uni) => {
+    setEditingId(u.id);
+    setName(u.name);
+    setAddress(u.address || '');
+    setShowForm(true);
+  };
+
   const create = async () => {
     if (!name.trim() || !address.trim()) return;
     setSaving(true);
     try {
-      await api.createUniversity({ name: name.trim(), address: address.trim() });
-      setName('');
-      setAddress('');
-      setShowForm(false);
+      if (editingId) {
+        await api.updateUniversity(editingId, { name: name.trim(), address: address.trim() });
+      } else {
+        await api.createUniversity({ name: name.trim(), address: address.trim() });
+      }
+      cancelForm();
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Yaratish xatosi');
+      setError(e instanceof Error ? e.message : "Saqlab bo'lmadi");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const remove = async (u: Uni) => {
+    if (!window.confirm(`"${u.name}" universitetini butunlay o'chirmoqchimisiz?`)) return;
+    try {
+      await api.deleteUniversity(u.id);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Amal bajarilmadi');
     }
   };
 
@@ -68,7 +95,7 @@ export function UniversitiesPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button
-            onClick={() => setShowForm((v) => !v)}
+            onClick={() => (showForm ? cancelForm() : setShowForm(true))}
             className="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg text-sm font-semibold"
           >
             <Plus className="w-4 h-4" />
@@ -95,13 +122,18 @@ export function UniversitiesPage() {
             value={address}
             onChange={(e) => setAddress(e.target.value)}
           />
-          <button
-            onClick={create}
-            disabled={saving}
-            className="px-4 py-2 bg-slate-700 text-white rounded-lg text-sm disabled:opacity-50"
-          >
-            {saving ? 'Saqlanmoqda...' : 'Saqlash'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={create}
+              disabled={saving}
+              className="px-4 py-2 bg-slate-700 text-white rounded-lg text-sm disabled:opacity-50"
+            >
+              {saving ? 'Saqlanmoqda...' : editingId ? 'Saqlash' : 'Yaratish'}
+            </button>
+            <button onClick={cancelForm} className="px-4 py-2 border rounded-lg text-sm">
+              Bekor
+            </button>
+          </div>
         </div>
       )}
 
@@ -118,18 +150,21 @@ export function UniversitiesPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Kontakt
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Amallar
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
                   Yuklanmoqda...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
                   <Building2 className="w-8 h-8 mx-auto mb-2 text-gray-300" />
                   Universitetlar yo&apos;q
                 </td>
@@ -151,6 +186,24 @@ export function UniversitiesPage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">{u.address || '—'}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{u.contact || '—'}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <div className="flex gap-1">
+                      <button
+                        title="Tahrirlash"
+                        onClick={() => startEdit(u)}
+                        className="p-1.5 border rounded hover:bg-gray-50"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        title="O'chirish"
+                        onClick={() => remove(u)}
+                        className="p-1.5 border rounded hover:bg-red-50 text-red-600"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}

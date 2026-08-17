@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw, UserPlus, Power, PowerOff, ArrowUp, ArrowDown } from 'lucide-react';
+import { RefreshCw, UserPlus, Power, PowerOff, ArrowUp, ArrowDown, Pencil, Trash2 } from 'lucide-react';
 import { api, unwrapList } from '../../services/api';
 
 interface AppUser {
@@ -35,6 +35,7 @@ export function UsersPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -76,13 +77,39 @@ export function UsersPage() {
     }
   };
 
+  const startEdit = (u: AppUser) => {
+    setEditingId(u.id);
+    setForm({
+      username: u.username || '',
+      password: '',
+      password2: '',
+      email: u.email || '',
+      phone: u.phone || '',
+      first_name: u.first_name || '',
+      last_name: u.last_name || '',
+      role: u.role || 'admin',
+    });
+    setShowCreate(true);
+  };
+
+  const cancelForm = () => {
+    setShowCreate(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.password !== form.password2) {
-      setError('Parollar mos emas');
+    if (form.password || form.password2) {
+      if (form.password !== form.password2) {
+        setError('Parollar mos emas');
+        return;
+      }
+    } else if (!editingId) {
+      setError('Parol talab qilinadi');
       return;
     }
-    if (form.role === 'superadmin') {
+    if (form.role === 'superadmin' && !editingId) {
       const ok = window.confirm(
         "Superadmin yaratish to'liq tizim huquqini beradi. Davom etasizmi?"
       );
@@ -91,22 +118,38 @@ export function UsersPage() {
     setSaving(true);
     setError('');
     try {
-      await api.createSuperadminUser({
-        username: form.username,
-        password: form.password,
-        password2: form.password2,
-        email: form.email || undefined,
-        phone: form.phone || undefined,
-        first_name: form.first_name || undefined,
-        last_name: form.last_name || undefined,
-        role: form.role,
-        is_active: true,
-      });
-      setShowCreate(false);
-      setForm(emptyForm);
+      if (editingId) {
+        // ponytail: PATCH — faqat to'ldirilgan maydonlar yuboriladi, parol bo'sh bo'lsa o'zgartirilmaydi
+        const data: Record<string, unknown> = {
+          username: form.username,
+          email: form.email || undefined,
+          phone: form.phone || undefined,
+          first_name: form.first_name || undefined,
+          last_name: form.last_name || undefined,
+          role: form.role,
+        };
+        if (form.password) {
+          data.password = form.password;
+          data.password2 = form.password2;
+        }
+        await api.updateSuperadminUser(editingId, data);
+      } else {
+        await api.createSuperadminUser({
+          username: form.username,
+          password: form.password,
+          password2: form.password2,
+          email: form.email || undefined,
+          phone: form.phone || undefined,
+          first_name: form.first_name || undefined,
+          last_name: form.last_name || undefined,
+          role: form.role,
+          is_active: true,
+        });
+      }
+      cancelForm();
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Yaratib bo‘lmadi');
+      setError(err instanceof Error ? err.message : "Saqlab bo'lmadi");
     } finally {
       setSaving(false);
     }
@@ -225,6 +268,27 @@ export function UsersPage() {
                         >
                           <ArrowDown className="w-3.5 h-3.5" />
                         </button>
+                        <button
+                          type="button"
+                          title="Tahrirlash"
+                          onClick={() => startEdit(u)}
+                          className="p-1.5 border rounded hover:bg-gray-50"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          title="O'chirish"
+                          onClick={() =>
+                            runAction(
+                              () => api.deleteSuperadminUser(u.id),
+                              `${displayName(u)} hisobini butunlay o'chirmoqchimisiz? Bu amalni orqaga qaytarib bo'lmaydi.`
+                            )
+                          }
+                          className="p-1.5 border rounded hover:bg-red-50 text-red-600"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </td>
                   )}
@@ -259,7 +323,7 @@ export function UsersPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button
-            onClick={() => setShowCreate((v) => !v)}
+            onClick={() => (showCreate ? cancelForm() : setShowCreate(true))}
             className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 text-white rounded-lg text-sm"
           >
             <UserPlus className="w-4 h-4" />
@@ -277,11 +341,14 @@ export function UsersPage() {
           onSubmit={handleCreate}
           className="mb-6 bg-white border border-gray-200 rounded-lg p-4 grid grid-cols-1 sm:grid-cols-2 gap-3"
         >
+          <div className="sm:col-span-2 text-sm font-medium text-gray-700">
+            {editingId ? `Tahrirlash: #${editingId}` : 'Yangi foydalanuvchi'}
+          </div>
           {(
             [
               ['username', 'Username *'],
-              ['password', 'Parol *'],
-              ['password2', 'Parol tasdiq *'],
+              ['password', editingId ? "Yangi parol (ixtiyoriy)" : 'Parol *'],
+              ['password2', editingId ? 'Parol tasdiq' : 'Parol tasdiq *'],
               ['first_name', 'Ism'],
               ['last_name', 'Familiya'],
               ['email', 'Email'],
@@ -292,7 +359,7 @@ export function UsersPage() {
               <span className="text-gray-600">{label}</span>
               <input
                 type={key.includes('password') ? 'password' : 'text'}
-                required={key === 'username' || key.includes('password')}
+                required={key === 'username' || (key.includes('password') && !editingId)}
                 value={form[key]}
                 onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                 className="mt-1 w-full px-3 py-2 border rounded-lg"
@@ -318,13 +385,9 @@ export function UsersPage() {
               disabled={saving}
               className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm disabled:opacity-50"
             >
-              {saving ? 'Saqlanmoqda...' : 'Yaratish'}
+              {saving ? 'Saqlanmoqda...' : editingId ? 'Saqlash' : 'Yaratish'}
             </button>
-            <button
-              type="button"
-              onClick={() => setShowCreate(false)}
-              className="px-4 py-2 border rounded-lg text-sm"
-            >
+            <button type="button" onClick={cancelForm} className="px-4 py-2 border rounded-lg text-sm">
               Bekor
             </button>
           </div>

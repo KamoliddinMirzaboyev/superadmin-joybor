@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Home, RefreshCw, Power, PowerOff, Plus } from 'lucide-react';
+import { Home, RefreshCw, Power, PowerOff, Plus, Pencil, Trash2 } from 'lucide-react';
 import { api, unwrapList, mediaUrl } from '../../services/api';
 
 interface Dorm {
@@ -40,7 +40,8 @@ export function DormitoriesPage() {
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const emptyForm = {
     name: '',
     address: '',
     university: '',
@@ -49,7 +50,8 @@ export function DormitoriesPage() {
     year_price: '',
     phone_numer: '',
     description: '',
-  });
+  };
+  const [form, setForm] = useState(emptyForm);
 
   const load = async () => {
     setLoading(true);
@@ -86,12 +88,49 @@ export function DormitoriesPage() {
     }
   };
 
+  const startEdit = (d: Dorm) => {
+    setEditingId(d.id);
+    setForm({
+      name: d.name || '',
+      address: d.address || '',
+      university: d.university != null ? String(d.university) : '',
+      admin: d.admin != null ? String(d.admin) : '',
+      month_price: d.month_price != null ? String(d.month_price) : '',
+      year_price: d.year_price != null ? String(d.year_price) : '',
+      phone_numer: d.phone_numer || '',
+      description: '',
+    });
+    setShowCreate(true);
+  };
+
+  const cancelForm = () => {
+    setShowCreate(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
+  const handleDelete = (d: Dorm) =>
+    runAction(
+      () => api.deleteDormitory(d.id),
+      `"${d.name}" yotoqxonasini butunlay o'chirmoqchimisiz? Bu amalni orqaga qaytarib bo'lmaydi.`
+    );
+
+  const runAction = async (fn: () => Promise<unknown>, confirmMessage?: string) => {
+    if (confirmMessage && !window.confirm(confirmMessage)) return;
+    try {
+      await fn();
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Amal bajarilmadi');
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError('');
     try {
-      await api.createDormitory({
+      const data = {
         name: form.name.trim(),
         address: form.address.trim(),
         university: Number(form.university),
@@ -100,22 +139,16 @@ export function DormitoriesPage() {
         year_price: form.year_price ? Number(form.year_price) : undefined,
         phone_numer: form.phone_numer || undefined,
         description: form.description || undefined,
-        is_active: true,
-      });
-      setShowCreate(false);
-      setForm({
-        name: '',
-        address: '',
-        university: '',
-        admin: '',
-        month_price: '',
-        year_price: '',
-        phone_numer: '',
-        description: '',
-      });
+      };
+      if (editingId) {
+        await api.updateDormitory(editingId, data);
+      } else {
+        await api.createDormitory({ ...data, is_active: true });
+      }
+      cancelForm();
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Yaratib bo‘lmadi');
+      setError(err instanceof Error ? err.message : "Saqlab bo'lmadi");
     } finally {
       setSaving(false);
     }
@@ -143,7 +176,7 @@ export function DormitoriesPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button
-            onClick={() => setShowCreate((v) => !v)}
+            onClick={() => (showCreate ? cancelForm() : setShowCreate(true))}
             className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 text-white rounded-lg text-sm"
           >
             <Plus className="w-4 h-4" />
@@ -161,6 +194,9 @@ export function DormitoriesPage() {
           onSubmit={handleCreate}
           className="mb-6 bg-white border border-gray-200 rounded-lg p-4 grid grid-cols-1 sm:grid-cols-2 gap-3"
         >
+          <div className="sm:col-span-2 text-sm font-medium text-gray-700">
+            {editingId ? `Tahrirlash: ${form.name || `#${editingId}`}` : 'Yangi yotoqxona'}
+          </div>
           <label className="text-sm sm:col-span-2">
             <span className="text-gray-600">Nomi *</span>
             <input
@@ -254,13 +290,9 @@ export function DormitoriesPage() {
               disabled={saving}
               className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm disabled:opacity-50"
             >
-              {saving ? 'Saqlanmoqda...' : 'Yaratish'}
+              {saving ? 'Saqlanmoqda...' : editingId ? 'Saqlash' : 'Yaratish'}
             </button>
-            <button
-              type="button"
-              onClick={() => setShowCreate(false)}
-              className="px-4 py-2 border rounded-lg text-sm"
-            >
+            <button type="button" onClick={cancelForm} className="px-4 py-2 border rounded-lg text-sm">
               Bekor
             </button>
           </div>
@@ -333,20 +365,34 @@ export function DormitoriesPage() {
                     </p>
                     {d.phone_numer && <p>Tel: {d.phone_numer}</p>}
                   </div>
-                  <button
-                    onClick={() => toggleActive(d)}
-                    className="mt-4 inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-gray-200 hover:bg-gray-50"
-                  >
-                    {d.is_active ? (
-                      <>
-                        <PowerOff className="w-4 h-4" /> O&apos;chirish
-                      </>
-                    ) : (
-                      <>
-                        <Power className="w-4 h-4" /> Faollashtirish
-                      </>
-                    )}
-                  </button>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => toggleActive(d)}
+                      className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-gray-200 hover:bg-gray-50"
+                    >
+                      {d.is_active ? (
+                        <>
+                          <PowerOff className="w-4 h-4" /> Nofaol
+                        </>
+                      ) : (
+                        <>
+                          <Power className="w-4 h-4" /> Faollashtirish
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => startEdit(d)}
+                      className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-gray-200 hover:bg-gray-50"
+                    >
+                      <Pencil className="w-4 h-4" /> Tahrirlash
+                    </button>
+                    <button
+                      onClick={() => handleDelete(d)}
+                      className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-gray-200 hover:bg-red-50 text-red-600"
+                    >
+                      <Trash2 className="w-4 h-4" /> O&apos;chirish
+                    </button>
+                  </div>
                 </div>
               </div>
             );
