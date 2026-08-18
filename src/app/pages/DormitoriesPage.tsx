@@ -1,5 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Home, RefreshCw, Power, PowerOff, Plus, Pencil, Trash2 } from 'lucide-react';
+import {
+  Home,
+  RefreshCw,
+  Power,
+  PowerOff,
+  Plus,
+  Pencil,
+  Trash2,
+  Building2,
+  MapPin,
+  DoorOpen,
+  BedDouble,
+  Banknote,
+  Phone,
+  User,
+} from 'lucide-react';
 import { api, unwrapList, mediaUrl } from '../../services/api';
 import { CardsSkeleton } from '../components/Skeleton';
 
@@ -315,83 +330,159 @@ export function DormitoriesPage() {
               (typeof d.statistics === 'object' && d.statistics) ||
               d.room_statistics ||
               {};
-            const totalRooms =
-              (stats as { total?: { rooms?: number } })?.total?.rooms ??
-              (stats as { rooms?: number })?.rooms ??
-              '—';
+            const statsObj = stats as {
+              total?: { rooms?: number; capacity?: number; free?: number };
+              rooms?: number;
+              capacity?: number;
+              free?: number;
+            };
+            const totalRooms = statsObj.total?.rooms ?? statsObj.rooms ?? '—';
+            const freeSpots = statsObj.total?.free ?? statsObj.free;
+            const capacity = statsObj.total?.capacity ?? statsObj.capacity;
             return (
               <div
                 key={d.id}
-                className="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden"
+                className="group bg-white rounded-2xl border border-surface-200 shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-1 hover:border-brand-200 transition-all duration-200 flex flex-col"
               >
-                {img && (
-                  <img
-                    src={mediaUrl(img)}
-                    alt={d.name}
-                    className="w-full h-36 object-cover"
-                  />
-                )}
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="text-lg font-semibold text-surface-900">{d.name}</h3>
-                      <p className="text-sm text-surface-500">
-                        {d.university_name || d.address || '—'}
-                      </p>
+                {/* Banner */}
+                <div className="relative h-40 shrink-0 overflow-hidden bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700">
+                  {img ? (
+                    <img
+                      src={mediaUrl(img)}
+                      alt={d.name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Home className="w-12 h-12 text-white/50" />
                     </div>
+                  )}
+                  {img && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+                  )}
+
+                  <span
+                    className={`absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm ${
+                      d.is_active
+                        ? 'bg-success-500 text-white'
+                        : 'bg-surface-700/85 text-white'
+                    }`}
+                  >
                     <span
-                      className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                        d.is_active
-                          ? 'bg-success-100 text-success-800'
-                          : 'bg-surface-100 text-surface-600'
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        d.is_active ? 'bg-white' : 'bg-surface-300/80'
                       }`}
-                    >
-                      {d.is_active ? 'Faol' : 'Nofaol'}
+                    />
+                    {d.is_active ? 'Faol' : 'Nofaol'}
+                  </span>
+
+                  {(d.university_name || d.address) && (
+                    <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-white/90 text-surface-700 backdrop-blur-sm max-w-[75%]">
+                      <Building2 className="w-3.5 h-3.5 shrink-0 text-brand-600" />
+                      <span className="truncate">{d.university_name || d.address}</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Body */}
+                <div className="p-5 flex flex-col gap-4 flex-1">
+                  <div>
+                    <h3 className="text-lg font-semibold text-surface-900 leading-snug">
+                      {d.name}
+                    </h3>
+                    {d.address && d.university_name && (
+                      <p className="flex items-start gap-1.5 mt-1 text-sm text-surface-500">
+                        <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-surface-400" />
+                        <span className="line-clamp-2">{d.address}</span>
+                      </p>
+                    )}
+                  </div>
+                  {/* Stats */}
+                  <div
+                    className={`grid gap-2 ${freeSpots != null || capacity != null ? 'grid-cols-3' : 'grid-cols-2'}`}
+                  >
+                    <div className="rounded-xl bg-surface-50 border border-surface-100 p-2.5 text-center">
+                      <DoorOpen className="w-4 h-4 mx-auto mb-1 text-brand-600" />
+                      <p className="text-lg font-semibold text-surface-900 leading-none">
+                        {String(totalRooms)}
+                      </p>
+                      <p className="text-[11px] text-surface-500 mt-1">Xona</p>
+                    </div>
+                    <div className="rounded-xl bg-surface-50 border border-surface-100 p-2.5 text-center">
+                      <BedDouble className="w-4 h-4 mx-auto mb-1 text-info-600" />
+                      <p className="text-lg font-semibold text-surface-900 leading-none">
+                        {capacity != null ? String(capacity) : '—'}
+                      </p>
+                      <p className="text-[11px] text-surface-500 mt-1">O'rin</p>
+                    </div>
+                    {freeSpots != null && (
+                      <div className="rounded-xl bg-brand-50 border border-brand-100 p-2.5 text-center">
+                        <BedDouble className="w-4 h-4 mx-auto mb-1 text-brand-600" />
+                        <p className="text-lg font-semibold text-success-700 leading-none">
+                          {String(freeSpots)}
+                        </p>
+                        <p className="text-[11px] text-surface-500 mt-1">Bo'sh</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-xl bg-surface-50 border border-surface-100 px-3 py-2.5 text-sm">
+                    <span className="flex items-center gap-1.5 text-surface-500">
+                      <Banknote className="w-4 h-4 text-brand-600" /> Oylik narx
+                    </span>
+                    <span className="font-semibold text-surface-900">
+                      {d.month_price != null
+                        ? `${d.month_price.toLocaleString()} so'm`
+                        : '—'}
                     </span>
                   </div>
-                  <div className="space-y-1 text-sm text-surface-600">
-                    <p>
-                      Admin: <span className="font-medium">{d.admin_name || '—'}</span>
-                    </p>
-                    <p>
-                      Xonalar: <span className="font-medium">{String(totalRooms)}</span>
-                    </p>
-                    <p>
-                      Oyiga:{' '}
-                      <span className="font-medium">
-                        {d.month_price != null
-                          ? `${d.month_price.toLocaleString()} so'm`
-                          : '—'}
-                      </span>
-                    </p>
-                    {d.phone_numer && <p>Tel: {d.phone_numer}</p>}
+
+                  <div className="space-y-1.5 text-sm text-surface-600">
+                    {d.admin_name && (
+                      <p className="flex items-center gap-1.5">
+                        <User className="w-4 h-4 shrink-0 text-surface-400" />
+                        Admin: <span className="font-medium text-surface-800">{d.admin_name}</span>
+                      </p>
+                    )}
+                    {d.phone_numer && (
+                      <p className="flex items-center gap-1.5">
+                        <Phone className="w-4 h-4 shrink-0 text-surface-400" />
+                        {d.phone_numer}
+                      </p>
+                    )}
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
+
+                  {/* Actions */}
+                  <div className="mt-auto grid grid-cols-3 gap-2 pt-3 border-t border-surface-100">
                     <button
                       onClick={() => toggleActive(d)}
-                      className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-surface-200 hover:bg-surface-50"
+                      className={`inline-flex items-center justify-center gap-1.5 text-sm px-2 py-2 rounded-lg border font-medium transition-colors duration-150 shrink-0 min-w-0 ${
+                        d.is_active
+                          ? 'border-surface-200 text-surface-600 hover:bg-surface-50'
+                          : 'border-brand-600 bg-brand-600 text-white hover:bg-brand-700'
+                      }`}
                     >
                       {d.is_active ? (
                         <>
-                          <PowerOff className="w-4 h-4" /> Nofaol
+                          <PowerOff className="w-4 h-4 shrink-0" /> Nofaol
                         </>
                       ) : (
                         <>
-                          <Power className="w-4 h-4" /> Faollashtirish
+                          <Power className="w-4 h-4 shrink-0" /> Faol
                         </>
                       )}
                     </button>
                     <button
                       onClick={() => startEdit(d)}
-                      className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-surface-200 hover:bg-surface-50"
+                      className="inline-flex items-center justify-center gap-1.5 text-sm px-2 py-2 rounded-lg border border-surface-200 text-surface-700 hover:bg-surface-50 transition-colors duration-150 shrink-0 min-w-0"
                     >
-                      <Pencil className="w-4 h-4" /> Tahrirlash
+                      <Pencil className="w-4 h-4 shrink-0" /> O'zgartir
                     </button>
                     <button
                       onClick={() => handleDelete(d)}
-                      className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-surface-200 hover:bg-danger-50 text-danger-600"
+                      className="inline-flex items-center justify-center gap-1.5 text-sm px-2 py-2 rounded-lg border border-danger-100 bg-danger-50 text-danger-700 hover:bg-danger-100 transition-colors duration-150 shrink-0 min-w-0"
                     >
-                      <Trash2 className="w-4 h-4" /> O&apos;chirish
+                      <Trash2 className="w-4 h-4 shrink-0" /> O'chirish
                     </button>
                   </div>
                 </div>

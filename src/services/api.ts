@@ -79,6 +79,26 @@ export async function apiFetch<T = unknown>(
   return (await res.json()) as T;
 }
 
+export interface TariffPlan {
+  id: number;
+  name: string;
+  slug: string;
+  subtitle: string;
+  badge: string;
+  min_beds: number;
+  max_beds: number;
+  month_price: number;
+  year_price: number;
+  yearly_discount_percent: number;
+  year_label?: string;
+  features: string[];
+  is_popular: boolean;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export type TariffPlanInput = Omit<TariffPlan, 'id' | 'year_label'>;
+
 export type Paginated<T> = {
   count: number;
   next: string | null;
@@ -281,6 +301,23 @@ export const api = {
     params?.page != null
       ? apiFetch(`/attendance-sessions/${qs(params)}`)
       : fetchAllPages('/attendance-sessions/', params),
+
+  getTariffs: () => apiFetch<TariffPlan[]>('/tariffs/'),
+
+  createTariff: (data: TariffPlanInput) =>
+    apiFetch<TariffPlan>('/superadmin/tariffs/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateTariff: (id: number | string, data: Partial<TariffPlanInput>) =>
+    apiFetch<TariffPlan>(`/superadmin/tariffs/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  deleteTariff: (id: number | string) =>
+    apiFetch(`/superadmin/tariffs/${id}/`, { method: 'DELETE' }),
 };
 
 export default api;

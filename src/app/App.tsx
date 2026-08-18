@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { DashboardPage } from './pages/DashboardPage';
@@ -13,9 +14,24 @@ import { SettingsPage } from './pages/SettingsPage';
 import { LoginPage } from './pages/LoginPage';
 import { api } from '../services/api';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { Toaster } from 'sonner';
+
+// URL path -> menyu id si. Refresh qilinganda ham sahifa yo'qolmaydi.
+const PAGE_PATHS: Record<string, string> = {
+  '/': 'dashboard',
+  '/universities': 'universities',
+  '/dormitories': 'dormitories',
+  '/users': 'users',
+  '/payments': 'payments',
+  '/attendance': 'attendance',
+  '/applications': 'applications',
+  '/reports': 'reports',
+  '/settings': 'settings',
+};
 
 function AppInner() {
-  const [activeMenuItem, setActiveMenuItem] = useState('dashboard');
+  const location = useLocation();
+  const routerNavigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [authed, setAuthed] = useState(() => !!sessionStorage.getItem('access'));
 
@@ -31,39 +47,16 @@ function AppInner() {
     return <LoginPage onSuccess={() => setAuthed(true)} />;
   }
 
-  const renderPage = () => {
-    switch (activeMenuItem) {
-      case 'dashboard':
-        return <DashboardPage />;
-      case 'universities':
-        return <UniversitiesPage />;
-      case 'dormitories':
-        return <DormitoriesPage />;
-      case 'users':
-        return <UsersPage />;
-      case 'payments':
-        return <PaymentsPage />;
-      case 'attendance':
-        return <AttendancePage />;
-      case 'applications':
-        return <ApplicationsPage />;
-      case 'reports':
-        return <ReportsPage />;
-      case 'settings':
-        return <SettingsPage />;
-      default:
-        return <DashboardPage />;
-    }
+  const activeMenuItem = PAGE_PATHS[location.pathname] || 'dashboard';
+
+  const handleNavigate = (id: string) => {
+    routerNavigate(id === 'dashboard' ? '/' : `/${id}`);
+    setSidebarOpen(false);
   };
 
   const handleLogout = () => {
     api.logout();
     setAuthed(false);
-  };
-
-  const navigate = (id: string) => {
-    setActiveMenuItem(id);
-    setSidebarOpen(false);
   };
 
   return (
@@ -81,7 +74,7 @@ function AppInner() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
-        <Sidebar activeItem={activeMenuItem} onNavigate={navigate} />
+        <Sidebar activeItem={activeMenuItem} onNavigate={handleNavigate} />
       </div>
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Header
@@ -90,7 +83,20 @@ function AppInner() {
           title={activeMenuItem}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">{renderPage()}</div>
+          <div className="max-w-7xl mx-auto">
+            <Routes>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/universities" element={<UniversitiesPage />} />
+              <Route path="/dormitories" element={<DormitoriesPage />} />
+              <Route path="/users" element={<UsersPage />} />
+              <Route path="/payments" element={<PaymentsPage />} />
+              <Route path="/attendance" element={<AttendancePage />} />
+              <Route path="/applications" element={<ApplicationsPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
         </main>
       </div>
     </div>
@@ -100,6 +106,7 @@ function AppInner() {
 export default function App() {
   return (
     <ErrorBoundary>
+      <Toaster position="top-right" richColors />
       <AppInner />
     </ErrorBoundary>
   );
