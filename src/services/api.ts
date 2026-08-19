@@ -158,6 +158,24 @@ export function mediaUrl(url?: string | null): string {
   return url;
 }
 
+export interface InboxNotification {
+  id: number;
+  message: string;
+  title?: string;
+  type: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export function isSuperAdminUser(me: Record<string, unknown> | null | undefined): boolean {
+  if (!me) return false;
+  if (me.is_super_admin === true) return true;
+  const role = String(me.role ?? '')
+    .toLowerCase()
+    .replace(/[_\s-]/g, '');
+  return role === 'superadmin';
+}
+
 export const api = {
   login: (username: string, password: string) =>
     apiFetch<{ access: string; refresh: string }>('/token/', {
@@ -170,6 +188,49 @@ export const api = {
   logout: () => {
     clearAuth();
   },
+
+  getNotifications: async (): Promise<InboxNotification[]> => {
+    try {
+      const res = await apiFetch<unknown>('/notifications/');
+      const list = unwrapList<Record<string, unknown>>(res);
+      return list.map((n) => ({
+        id: Number(n.id),
+        message: String(n.message ?? n.title ?? n.content ?? ''),
+        title: n.title != null ? String(n.title) : undefined,
+        type: String(n.type ?? n.notification_type ?? 'info'),
+        is_read: Boolean(n.is_read ?? n.read ?? n.isRead),
+        created_at: String(n.created_at ?? n.createdAt ?? ''),
+      }));
+    } catch {
+      return [];
+    }
+  },
+
+  getUnreadCount: async (): Promise<number> => {
+    try {
+      const res = await apiFetch<unknown>('/notifications/unread-count/');
+      if (typeof res === 'number') return res;
+      if (res && typeof res === 'object') {
+        const o = res as Record<string, unknown>;
+        return Number(o.unread ?? o.count ?? o.unread_count ?? 0);
+      }
+      return 0;
+    } catch {
+      return 0;
+    }
+  },
+
+  markNotificationAsRead: (id: number) =>
+    apiFetch('/notifications/mark-read/', {
+      method: 'POST',
+      body: JSON.stringify({ notification_id: id, id }),
+    }),
+
+  markAllNotificationsAsRead: () =>
+    apiFetch('/notifications/mark-all-read/', {
+      method: 'POST',
+      body: '{}',
+    }),
 
   getDashboard: () => apiFetch<Record<string, unknown>>('/superadmin/dashboard/'),
   getStats: () => apiFetch<Record<string, unknown>>('/stats/'),

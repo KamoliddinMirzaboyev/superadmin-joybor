@@ -169,16 +169,17 @@ export function SettingsPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // 2. SaaS Platform Tariffs State
-  const [fixedPlans, setFixedPlans] = useState<FixedPlanItem[]>(() => {
-    const saved = localStorage.getItem('joybor_saas_fixed_plans');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return DEFAULT_FIXED_PLANS;
-  });
+  // 2. SaaS Platform Tariffs State (backend: /api/tariffs/, /api/superadmin/tariffs/)
+  const [fixedPlans, setFixedPlans] = useState<TariffPlan[]>([]);
+  const [tariffsLoading, setTariffsLoading] = useState(true);
+
+  useEffect(() => {
+    api
+      .getTariffs()
+      .then(setFixedPlans)
+      .catch(() => toast.error("Tariflarni yuklashda xatolik yuz berdi"))
+      .finally(() => setTariffsLoading(false));
+  }, []);
 
   const [flexibleConfig, setFlexibleConfig] = useState<FlexiblePlanConfig>(() => {
     const saved = localStorage.getItem('joybor_saas_flexible_config');
@@ -190,19 +191,10 @@ export function SettingsPage() {
     return DEFAULT_FLEXIBLE_CONFIG;
   });
 
-  const [editingPlan, setEditingPlan] = useState<FixedPlanItem | null>(null);
+  const [editingPlan, setEditingPlan] = useState<TariffPlan | null>(null);
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
-  const [planForm, setPlanForm] = useState<FixedPlanItem>({
-    id: '',
-    name: '',
-    capacityText: '',
-    monthlyPrice: 200000,
-    yearlyDiscountPercent: 10,
-    monthsCount: 10,
-    isPopular: false,
-    isActive: true,
-    features: [''],
-  });
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [planForm, setPlanForm] = useState<TariffPlanInput>(emptyPlanForm);
 
   // Interactive Calculator State
   const [flexiblePercentInput, setFlexiblePercentInput] = useState<string>(() => {
@@ -398,61 +390,64 @@ export function SettingsPage() {
   };
 
   // Fixed Plan Actions
-  const handleOpenPlanModal = (item?: FixedPlanItem) => {
+  const handleOpenPlanModal = (item?: TariffPlan) => {
     if (item) {
       setEditingPlan(item);
-      setPlanForm({ ...item, features: item.features.length ? [...item.features] : [''] });
+      const { id: _id, year_label: _yearLabel, ...rest } = item;
+      setPlanForm({ ...rest, features: rest.features.length ? [...rest.features] : [''] });
     } else {
       setEditingPlan(null);
-      setPlanForm({
-        id: String(Date.now()),
-        name: '',
-        capacityText: "500 tagacha o'rin",
-        monthlyPrice: 300000,
-        yearlyDiscountPercent: 10,
-        monthsCount: 10,
-        features: ["Barcha asosiy imkoniyatlar", "Kunlik monitoring"],
-        isPopular: false,
-        isActive: true,
-      });
+      setPlanForm({ ...emptyPlanForm, sort_order: fixedPlans.length + 1 });
     }
     setIsPlanModalOpen(true);
   };
 
-  const handleSavePlan = (e: React.FormEvent) => {
+  const handleSavePlan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!planForm.name.trim()) {
       toast.error('Tarif nomini kiriting');
       return;
     }
 
-    let next: FixedPlanItem[];
-    if (editingPlan) {
-      next = fixedPlans.map((p) => (p.id === editingPlan.id ? { ...planForm, features: planForm.features.filter(Boolean) } : p));
-      toast.success("Tarif o'zgarishlari saqlandi");
-    } else {
-      next = [...fixedPlans, { ...planForm, id: String(Date.now()), features: planForm.features.filter(Boolean) }];
-      toast.success("Yangi tarif qo'shildi");
-    }
+    const monthPrice = Number(planForm.month_price) || 0;
+    const discount = Number(planForm.yearly_discount_percent) || 0;
+    const payload: TariffPlanInput = {
+      ...planForm,
+      slug: slugify(planForm.name),
+      subtitle: tariffSubtitle(Number(planForm.min_beds) || 0, Number(planForm.max_beds) || 0),
+      badge: planForm.is_popular ? 'OMMABOP' : '',
+      year_price: Math.round(monthPrice * 10 * (1 - discount / 100)),
+      features: planForm.features.map((f) => f.trim()).filter(Boolean),
+    };
 
-    setFixedPlans(next);
-    localStorage.setItem('joybor_saas_fixed_plans', JSON.stringify(next));
-    setIsPlanModalOpen(false);
+    setSavingPlan(true);
+    try {
+      if (editingPlan) {
+        const updated = await api.updateTariff(editingPlan.id, payload);
+        setFixedPlans((prev) => prev.map((p) => (p.id === editingPlan.id ? updated : p)));
+        toast.success("Tarif o'zgarishlari saqlandi");
+      } else {
+        const created = await api.createTariff(payload);
+        setFixedPlans((prev) => [...prev, created]);
+        toast.success("Yangi tarif qo'shildi");
+      }
+      setIsPlanModalOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Saqlashda xatolik yuz berdi');
+    } finally {
+      setSavingPlan(false);
+    }
   };
 
-  const handleDeletePlan = (id: string) => {
-    if (window.confirm("Haqiqatan ham bu tarifni o'chirmoqchimisiz?")) {
-      const next = fixedPlans.filter((p) => p.id !== id);
-      setFixedPlans(next);
-      localStorage.setItem('joybor_saas_fixed_plans', JSON.stringify(next));
+  const handleDeletePlan = async (id: number) => {
+    if (!window.confirm("Haqiqatan ham bu tarifni o'chirmoqchimisiz?")) return;
+    try {
+      await api.deleteTariff(id);
+      setFixedPlans((prev) => prev.filter((p) => p.id !== id));
       toast.success("Tarif o'chirildi");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "O'chirishda xatolik yuz berdi");
     }
-  };
-
-  const handleTogglePlanActive = (id: string) => {
-    const next = fixedPlans.map((p) => (p.id === id ? { ...p, isActive: !p.isActive } : p));
-    setFixedPlans(next);
-    localStorage.setItem('joybor_saas_fixed_plans', JSON.stringify(next));
   };
 
   return (
@@ -614,40 +609,51 @@ export function SettingsPage() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                    {fixedPlans.map((plan) => {
-                      const yearlyPrice = Math.round(
-                        plan.monthlyPrice * plan.monthsCount * (1 - plan.yearlyDiscountPercent / 100)
-                      );
-
-                      return (
+                  {tariffsLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="h-64 rounded-xl bg-surface-100 animate-pulse" />
+                      ))}
+                    </div>
+                  ) : fixedPlans.length === 0 ? (
+                    <div className="p-8 rounded-xl border border-dashed border-surface-200 text-center text-sm text-surface-500">
+                      Hozircha qat'iy tarif yo'q. "Yangi Qat'iy Tarif Qo'shish" tugmasi orqali qo'shing.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                      {fixedPlans.map((plan) => (
                         <div
                           key={plan.id}
                           className={`bg-white rounded-xl border ${
-                            plan.isPopular
+                            plan.is_popular
                               ? 'border-brand-500 ring-2 ring-brand-500/15'
                               : 'border-surface-200'
-                          } p-5 transition-all shadow-sm relative flex flex-col`}
+                          } p-5 transition-all shadow-sm relative flex flex-col ${!plan.is_active ? 'opacity-60' : ''}`}
                         >
-                          {plan.isPopular && (
+                          {plan.is_popular && (
                             <span className="absolute top-4 right-4 bg-brand-600 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md shadow-sm">
-                              Ommabop
+                              {plan.badge || 'Ommabop'}
                             </span>
                           )}
 
                           <h4 className="text-lg font-bold text-surface-900">{plan.name}</h4>
                           <span className="inline-block mt-1 w-fit text-xs font-semibold text-surface-600 bg-surface-50 px-2.5 py-0.5 rounded-md border border-surface-200">
-                            {plan.capacityText}
+                            {plan.subtitle}
                           </span>
+                          {!plan.is_active && (
+                            <span className="inline-block mt-1.5 w-fit text-[10px] font-bold uppercase tracking-wider text-surface-400">
+                              Nofaol
+                            </span>
+                          )}
 
                           <div className="mt-4">
                             <div className="text-2xl font-black text-surface-900">
-                              {plan.monthlyPrice.toLocaleString('uz-UZ')}{' '}
+                              {plan.month_price.toLocaleString('uz-UZ')}{' '}
                               <span className="text-xs font-medium text-surface-500">so'm / oy</span>
                             </div>
                             <div className="text-xs font-semibold text-success-600 mt-0.5">
-                              Yillik (-{plan.yearlyDiscountPercent}%):{' '}
-                              <strong className="text-surface-900">{yearlyPrice.toLocaleString('uz-UZ')} so'm</strong>
+                              Yillik (-{plan.yearly_discount_percent}%):{' '}
+                              <strong className="text-surface-900">{plan.year_price.toLocaleString('uz-UZ')} so'm</strong>
                             </div>
                           </div>
 
@@ -683,9 +689,9 @@ export function SettingsPage() {
                             </button>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="p-3 rounded-lg bg-surface-100 border border-surface-200 text-center text-xs font-semibold text-surface-700">
                     💡 Iyul va Avgust uchun to'lov olinmaydi (Bepul saqlanadi)
@@ -1584,21 +1590,42 @@ export function SettingsPage() {
                       />
                     </div>
 
-                    {/* O'rinlar sig'imi */}
+                    {/* Min o'rin */}
                     <div>
                       <label className="block text-[11px] font-bold text-surface-600 uppercase tracking-wider mb-1">
-                        Sig'im diapazoni *
+                        Min o'rin
                       </label>
                       <input
-                        type="text"
-                        required
-                        value={planForm.capacityText}
+                        type="number"
+                        min={0}
+                        value={planForm.min_beds}
                         onChange={(e) =>
-                          setPlanForm((p) => ({ ...p, capacityText: e.target.value }))
+                          setPlanForm((p) => ({ ...p, min_beds: Number(e.target.value) || 0 }))
                         }
-                        placeholder="masalan: 300 tagacha o'rin"
+                        placeholder="0"
                         className="w-full px-3.5 py-2 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
                       />
+                    </div>
+
+                    {/* Max o'rin */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-surface-600 uppercase tracking-wider mb-1">
+                        Max o'rin *
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        value={planForm.max_beds}
+                        onChange={(e) =>
+                          setPlanForm((p) => ({ ...p, max_beds: Number(e.target.value) || 0 }))
+                        }
+                        placeholder="500"
+                        className="w-full px-3.5 py-2 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
+                      />
+                      <p className="text-[10px] text-surface-400 mt-1">
+                        Sig'im: {tariffSubtitle(Number(planForm.min_beds) || 0, Number(planForm.max_beds) || 0)}
+                      </p>
                     </div>
 
                     {/* Oylik Narxi */}
@@ -1611,9 +1638,9 @@ export function SettingsPage() {
                         required
                         min={0}
                         step={10000}
-                        value={planForm.monthlyPrice}
+                        value={planForm.month_price}
                         onChange={(e) =>
-                          setPlanForm((p) => ({ ...p, monthlyPrice: Number(e.target.value) || 0 }))
+                          setPlanForm((p) => ({ ...p, month_price: Number(e.target.value) || 0 }))
                         }
                         className="w-full px-3.5 py-2 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
                       />
@@ -1628,12 +1655,15 @@ export function SettingsPage() {
                         type="number"
                         min={0}
                         max={100}
-                        value={planForm.yearlyDiscountPercent}
+                        value={planForm.yearly_discount_percent}
                         onChange={(e) =>
-                          setPlanForm((p) => ({ ...p, yearlyDiscountPercent: Number(e.target.value) || 0 }))
+                          setPlanForm((p) => ({ ...p, yearly_discount_percent: Number(e.target.value) || 0 }))
                         }
                         className="w-full px-3.5 py-2 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
                       />
+                      <p className="text-[10px] text-surface-400 mt-1">
+                        10 oy uchun yillik: {Math.round((Number(planForm.month_price) || 0) * 10 * (1 - (Number(planForm.yearly_discount_percent) || 0) / 100)).toLocaleString('uz-UZ')} so'm
+                      </p>
                     </div>
 
                     {/* Imkoniyatlar ro'yxati */}
@@ -1688,9 +1718,9 @@ export function SettingsPage() {
                       <label className="flex items-center gap-2 text-xs font-medium text-surface-700 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={planForm.isPopular}
+                          checked={planForm.is_popular}
                           onChange={(e) =>
-                            setPlanForm((p) => ({ ...p, isPopular: e.target.checked }))
+                            setPlanForm((p) => ({ ...p, is_popular: e.target.checked }))
                           }
                           className="w-4 h-4 rounded text-brand-600"
                         />
@@ -1700,9 +1730,9 @@ export function SettingsPage() {
                       <label className="flex items-center gap-2 text-xs font-medium text-surface-700 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={planForm.isActive}
+                          checked={planForm.is_active}
                           onChange={(e) =>
-                            setPlanForm((p) => ({ ...p, isActive: e.target.checked }))
+                            setPlanForm((p) => ({ ...p, is_active: e.target.checked }))
                           }
                           className="w-4 h-4 rounded text-brand-600"
                         />
@@ -1715,15 +1745,17 @@ export function SettingsPage() {
                     <button
                       type="button"
                       onClick={() => setIsPlanModalOpen(false)}
-                      className="flex-1 px-4 py-2 text-sm font-semibold rounded-lg border border-surface-200 hover:bg-surface-50 text-surface-700 transition-colors"
+                      disabled={savingPlan}
+                      className="flex-1 px-4 py-2 text-sm font-semibold rounded-lg border border-surface-200 hover:bg-surface-50 text-surface-700 transition-colors disabled:opacity-50"
                     >
                       Bekor qilish
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors shadow-sm"
+                      disabled={savingPlan}
+                      className="flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors shadow-sm disabled:opacity-50"
                     >
-                      Saqlash
+                      {savingPlan ? 'Saqlanmoqda...' : 'Saqlash'}
                     </button>
                   </div>
                 </form>
