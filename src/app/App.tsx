@@ -6,15 +6,17 @@ import { DashboardPage } from './pages/DashboardPage';
 import { UniversitiesPage } from './pages/UniversitiesPage';
 import { DormitoriesPage } from './pages/DormitoriesPage';
 import { UsersPage } from './pages/UsersPage';
-import { PaymentsPage } from './pages/PaymentsPage';
-import { AttendancePage } from './pages/AttendancePage';
+import { DormitoryPaymentsPage } from './pages/DormitoryPaymentsPage';
+import { ComplaintsPage } from './pages/ComplaintsPage';
 import { ApplicationsPage } from './pages/ApplicationsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LoginPage } from './pages/LoginPage';
-import { api } from '../services/api';
+import { NotificationsPage } from './pages/NotificationsPage';
+import { api, isSuperAdminUser } from '../services/api';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Toaster } from 'sonner';
+import { useTheme } from '../theme';
 
 // URL path -> menyu id si. Refresh qilinganda ham sahifa yo'qolmaydi.
 const PAGE_PATHS: Record<string, string> = {
@@ -22,11 +24,12 @@ const PAGE_PATHS: Record<string, string> = {
   '/universities': 'universities',
   '/dormitories': 'dormitories',
   '/users': 'users',
-  '/payments': 'payments',
-  '/attendance': 'attendance',
+  '/dormitory-payments': 'dormitory-payments',
+  '/complaints': 'complaints',
   '/applications': 'applications',
   '/reports': 'reports',
   '/settings': 'settings',
+  '/notifications': 'notifications',
 };
 
 function AppInner() {
@@ -37,10 +40,18 @@ function AppInner() {
 
   useEffect(() => {
     if (!authed) return;
-    // token yaroqliligini yumshoq tekshirish
-    api.me().catch(() => {
-      // ba'zi rollarda /me/ cheklangan bo'lishi mumkin — logout qilmaymiz
-    });
+    api
+      .me()
+      .then((me) => {
+        if (!isSuperAdminUser(me)) {
+          api.logout();
+          setAuthed(false);
+        }
+      })
+      .catch(() => {
+        api.logout();
+        setAuthed(false);
+      });
   }, [authed]);
 
   if (!authed) {
@@ -60,7 +71,7 @@ function AppInner() {
   };
 
   return (
-    <div className="flex h-screen bg-surface-50">
+    <div className="flex h-screen bg-surface-50 dark:bg-surface-950">
       {sidebarOpen && (
         <button
           type="button"
@@ -81,6 +92,7 @@ function AppInner() {
           onLogout={handleLogout}
           onMenu={() => setSidebarOpen(true)}
           title={activeMenuItem}
+          onOpenNotifications={() => routerNavigate('/notifications')}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
@@ -89,11 +101,12 @@ function AppInner() {
               <Route path="/universities" element={<UniversitiesPage />} />
               <Route path="/dormitories" element={<DormitoriesPage />} />
               <Route path="/users" element={<UsersPage />} />
-              <Route path="/payments" element={<PaymentsPage />} />
-              <Route path="/attendance" element={<AttendancePage />} />
+              <Route path="/dormitory-payments" element={<DormitoryPaymentsPage />} />
+              <Route path="/complaints" element={<ComplaintsPage />} />
               <Route path="/applications" element={<ApplicationsPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
@@ -104,9 +117,10 @@ function AppInner() {
 }
 
 export default function App() {
+  const { isDark } = useTheme();
   return (
     <ErrorBoundary>
-      <Toaster position="top-right" richColors />
+      <Toaster position="top-right" richColors theme={isDark ? 'dark' : 'light'} />
       <AppInner />
     </ErrorBoundary>
   );

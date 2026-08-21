@@ -13,7 +13,6 @@ import {
   Send,
   Instagram,
   Youtube,
-  Facebook,
   Globe,
   Plus,
   Pencil,
@@ -35,7 +34,15 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { api, type TariffPlan, type TariffPlanInput } from '../../services/api';
+import {
+  api,
+  mediaUrl,
+  type TariffPlan,
+  type TariffPlanInput,
+  type ContactInfo,
+  type PlatformSettings,
+  type PlatformBanner,
+} from '../../services/api';
 import { FormCardSkeleton } from '../components/Skeleton';
 
 type SettingsTab = 'profile_security' | 'tariffs' | 'platform_info' | 'contacts_socials';
@@ -75,30 +82,6 @@ export interface FlexiblePlanConfig {
   freeMonthsNote: string;
 }
 
-export interface PlatformInfo {
-  platformName: string;
-  heroTitle: string;
-  heroSubtitle: string;
-  heroImageUrl: string;
-  bannerImages: string[];
-  botUrl: string;
-  supportLink: string;
-  aboutText: string;
-}
-
-export interface ContactInfo {
-  phone: string;
-  secondaryPhone?: string;
-  email: string;
-  address: string;
-  workingHours: string;
-  telegramUrl: string;
-  instagramUrl: string;
-  youtubeUrl: string;
-  facebookUrl: string;
-  websiteUrl: string;
-}
-
 const DEFAULT_FLEXIBLE_CONFIG: FlexiblePlanConfig = {
   rateMultiplier: 0.003,
   ratePercentText: '0.003 (0.3%)',
@@ -106,32 +89,16 @@ const DEFAULT_FLEXIBLE_CONFIG: FlexiblePlanConfig = {
   freeMonthsNote: "Iyul va Avgustda to'lov: 0 so'm (bepul saqlash)",
 };
 
-const DEFAULT_PLATFORM_INFO: PlatformInfo = {
-  platformName: 'JoyBor — Talabalar Turar Joyi Tizimi',
-  heroTitle: "Yotoqxonangizni tez va oson toping hamda band qiling",
-  heroSubtitle: "JoyBor platformasi orqali universitet yotoqxonalariga ariza topshiring, xonalarni ko'ring va navbatsiz joylashing.",
-  heroImageUrl: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&q=80&w=1200',
-  bannerImages: [
-    'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&q=80&w=1200',
-    'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&q=80&w=1200',
-    'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&q=80&w=1200',
-  ],
-  botUrl: 'https://t.me/JoyBorobot',
-  supportLink: 'https://t.me/JoyBorobot',
-  aboutText: "JoyBor — Oliy ta'lim muassasalari talabalari uchun yaratilgan zamonaviy, shaffof va qulay yotoqxona boshqaruv tizimi.",
-};
-
-const DEFAULT_CONTACTS: ContactInfo = {
-  phone: '+998 (71) 200-00-00',
-  secondaryPhone: '+998 (90) 123-45-67',
-  email: 'info@joy-bor.uz',
-  address: "Toshkent shahri, Yunusobod tumani, Amir Temur ko'chasi 108",
-  workingHours: 'Dushanba - Shanba: 09:00 - 18:00',
-  telegramUrl: 'https://t.me/JoyBorobot',
-  instagramUrl: 'https://instagram.com/joybor_uz',
-  youtubeUrl: 'https://youtube.com/@joybor',
-  facebookUrl: 'https://facebook.com/joybor',
-  websiteUrl: 'https://joy-bor.uz',
+const EMPTY_CONTACTS: ContactInfo = {
+  phone: '',
+  phone_extra: '',
+  email: '',
+  working_hours: '',
+  address: '',
+  telegram_url: '',
+  instagram_url: '',
+  youtube_url: '',
+  website_url: '',
 };
 
 function formatUzbekPhone(input: string): string {
@@ -232,29 +199,36 @@ export function SettingsPage() {
     return Math.round(calcTotalRevenue * flexibleConfig.rateMultiplier);
   }, [calcTotalRevenue, flexibleConfig.rateMultiplier]);
 
-  // 3. Platform Info State
-  const [platformInfo, setPlatformInfo] = useState<PlatformInfo>(() => {
-    const saved = localStorage.getItem('joybor_platform_info');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return DEFAULT_PLATFORM_INFO;
-  });
+  // 3. Platform Info State (backend: /api/superadmin/platform/)
+  const [platformInfo, setPlatformInfo] = useState<PlatformSettings | null>(null);
+  const [platformLoading, setPlatformLoading] = useState(true);
+  const [banners, setBanners] = useState<PlatformBanner[]>([]);
   const [savingPlatform, setSavingPlatform] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
-  // 4. Contacts & Socials State
-  const [contacts, setContacts] = useState<ContactInfo>(() => {
-    const saved = localStorage.getItem('joybor_contacts');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return DEFAULT_CONTACTS;
-  });
+  useEffect(() => {
+    api
+      .getPlatform()
+      .then((data) => {
+        setPlatformInfo(data);
+        setBanners(data.banners || []);
+      })
+      .catch(() => toast.error("Platforma ma'lumotlarini yuklashda xatolik yuz berdi"))
+      .finally(() => setPlatformLoading(false));
+  }, []);
+
+  // 4. Contacts & Socials State (backend: /api/superadmin/contact/)
+  const [contacts, setContacts] = useState<ContactInfo>(EMPTY_CONTACTS);
+  const [contactsLoading, setContactsLoading] = useState(true);
   const [savingContacts, setSavingContacts] = useState(false);
+
+  useEffect(() => {
+    api
+      .getContact()
+      .then(setContacts)
+      .catch(() => toast.error("Aloqa ma'lumotlarini yuklashda xatolik yuz berdi"))
+      .finally(() => setContactsLoading(false));
+  }, []);
 
   useEffect(() => {
     api
@@ -311,82 +285,78 @@ export function SettingsPage() {
   };
 
   // Save Platform Info
-  const handleSavePlatformInfo = (e: React.FormEvent) => {
+  const handleSavePlatformInfo = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!platformInfo) return;
     setSavingPlatform(true);
-    localStorage.setItem('joybor_platform_info', JSON.stringify(platformInfo));
-    setTimeout(() => {
-      setSavingPlatform(false);
+    try {
+      const { banners: _banners, updated_at: _updatedAt, ...payload } = platformInfo;
+      const updated = await api.updatePlatform(payload);
+      setPlatformInfo(updated);
       toast.success("Platforma ma'lumotlari saqlandi");
-    }, 300);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Saqlashda xatolik yuz berdi');
+    } finally {
+      setSavingPlatform(false);
+    }
   };
 
   // Multiple Banner Images Upload Handlers
-  const handleMultipleImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMultipleImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
-    const readers: Promise<string>[] = [];
-    Array.from(files).forEach((file) => {
-      readers.push(
-        new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
-        })
-      );
-    });
-
-    Promise.all(readers).then((newImages) => {
-      setPlatformInfo((p) => {
-        const existing = Array.isArray(p.bannerImages) ? p.bannerImages : (p.heroImageUrl ? [p.heroImageUrl] : []);
-        const combined = [...existing, ...newImages];
-        return {
-          ...p,
-          bannerImages: combined,
-          heroImageUrl: combined[0] || p.heroImageUrl,
-        };
-      });
-      toast.success(`${newImages.length} ta rasm yuklandi`);
-    });
+    setUploadingBanner(true);
+    try {
+      const uploaded: PlatformBanner[] = [];
+      for (const file of Array.from(files)) {
+        const form = new FormData();
+        form.append('image', file);
+        form.append('sort_order', String(banners.length + uploaded.length));
+        uploaded.push(await api.createBanner(form));
+      }
+      setBanners((prev) => [...prev, ...uploaded]);
+      toast.success(`${uploaded.length} ta rasm yuklandi`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Rasm yuklashda xatolik yuz berdi');
+    } finally {
+      setUploadingBanner(false);
+      e.target.value = '';
+    }
   };
 
-  const handleRemoveBannerImage = (index: number) => {
-    setPlatformInfo((p) => {
-      const existing = Array.isArray(p.bannerImages) ? p.bannerImages : [];
-      const next = existing.filter((_, i) => i !== index);
-      return {
-        ...p,
-        bannerImages: next,
-        heroImageUrl: next[0] || '',
-      };
-    });
-    toast.success("Rasm o'chirildi");
+  const handleRemoveBannerImage = async (id: number) => {
+    try {
+      await api.deleteBanner(id);
+      setBanners((prev) => prev.filter((b) => b.id !== id));
+      toast.success("Rasm o'chirildi");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "O'chirishda xatolik yuz berdi");
+    }
   };
 
-  const handleSetPrimaryBannerImage = (index: number) => {
-    setPlatformInfo((p) => {
-      const existing = Array.isArray(p.bannerImages) ? [...p.bannerImages] : [];
-      const selected = existing.splice(index, 1)[0];
-      const next = [selected, ...existing];
-      return {
-        ...p,
-        bannerImages: next,
-        heroImageUrl: selected,
-      };
-    });
-    toast.success("Asosiy rasm etib belgilandi");
+  const handleSetPrimaryBannerImage = async (id: number) => {
+    try {
+      const updated = await api.updateBanner(id, { is_primary: true });
+      setBanners((prev) => prev.map((b) => (b.id === id ? updated : { ...b, is_primary: false })));
+      toast.success("Asosiy rasm etib belgilandi");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Saqlashda xatolik yuz berdi');
+    }
   };
 
   // Save Contacts & Socials
-  const handleSaveContacts = (e: React.FormEvent) => {
+  const handleSaveContacts = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingContacts(true);
-    localStorage.setItem('joybor_contacts', JSON.stringify(contacts));
-    setTimeout(() => {
-      setSavingContacts(false);
+    try {
+      const updated = await api.updateContact(contacts);
+      setContacts(updated);
       toast.success("Aloqa va ijtimoiy tarmoqlar saqlandi");
-    }, 300);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Saqlashda xatolik yuz berdi');
+    } finally {
+      setSavingContacts(false);
+    }
   };
 
   // Fixed Plan Actions
@@ -1087,7 +1057,9 @@ export function SettingsPage() {
           {/* ========================================================================= */}
           {/* TAB 3: PLATFORMA MA'LUMOTLARI VA HERO BANNER */}
           {/* ========================================================================= */}
-          {activeTab === 'platform_info' && (
+          {activeTab === 'platform_info' && platformLoading && <FormCardSkeleton />}
+
+          {activeTab === 'platform_info' && !platformLoading && platformInfo && (
             <form onSubmit={handleSavePlatformInfo} className="bg-white rounded-xl border border-surface-200 p-6 shadow-sm space-y-6">
               <div>
                 <h3 className="text-base font-bold text-surface-900 flex items-center gap-2">
@@ -1095,7 +1067,7 @@ export function SettingsPage() {
                   <span>Platforma va Landing Sahifa Sozlamalari</span>
                 </h3>
                 <p className="text-xs text-surface-500 mt-0.5">
-                  Talaba sayti bosh sahifasidagi sarlavhalar, ta'riflar, rasmlar va yo'naltiruvchi havolalar
+                  Talaba sayti "Hamkorlik" sahifasidagi sarlavhalar, ta'rif va banner rasmlar shu yerdan boshqariladi
                 </p>
               </div>
 
@@ -1107,9 +1079,9 @@ export function SettingsPage() {
                   <input
                     type="text"
                     required
-                    value={platformInfo.platformName}
+                    value={platformInfo.official_name}
                     onChange={(e) =>
-                      setPlatformInfo((p) => ({ ...p, platformName: e.target.value }))
+                      setPlatformInfo((p) => (p ? { ...p, official_name: e.target.value } : p))
                     }
                     className="w-full px-3.5 py-2.5 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
                   />
@@ -1122,9 +1094,9 @@ export function SettingsPage() {
                   <input
                     type="text"
                     required
-                    value={platformInfo.heroTitle}
+                    value={platformInfo.hero_title}
                     onChange={(e) =>
-                      setPlatformInfo((p) => ({ ...p, heroTitle: e.target.value }))
+                      setPlatformInfo((p) => (p ? { ...p, hero_title: e.target.value } : p))
                     }
                     className="w-full px-3.5 py-2.5 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors font-medium"
                   />
@@ -1136,9 +1108,9 @@ export function SettingsPage() {
                   </label>
                   <textarea
                     rows={2}
-                    value={platformInfo.heroSubtitle}
+                    value={platformInfo.hero_subtitle}
                     onChange={(e) =>
-                      setPlatformInfo((p) => ({ ...p, heroSubtitle: e.target.value }))
+                      setPlatformInfo((p) => (p ? { ...p, hero_subtitle: e.target.value } : p))
                     }
                     className="w-full px-3.5 py-2.5 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
                   />
@@ -1152,22 +1124,23 @@ export function SettingsPage() {
                         Platforma Banner Rasmlari (Bir nechta yuklash mumkin)
                       </label>
                       <p className="text-xs text-surface-500 mt-0.5">
-                        Kompyuterdan fayl tanlang yoki bir nechta rasm yuklang
+                        Talaba saytidagi Hamkorlik sahifasi fon rasmi — asosiy (birinchi) rasm ishlatiladi
                       </p>
                     </div>
 
                     <label
                       htmlFor="banner-files-upload"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-semibold cursor-pointer shadow-sm transition-colors"
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-semibold cursor-pointer shadow-sm transition-colors ${uploadingBanner ? 'opacity-60 pointer-events-none' : ''}`}
                     >
                       <Upload className="w-3.5 h-3.5" />
-                      <span>+ Rasm yuklash</span>
+                      <span>{uploadingBanner ? 'Yuklanmoqda...' : '+ Rasm yuklash'}</span>
                       <input
                         id="banner-files-upload"
                         type="file"
                         multiple
                         accept="image/*"
                         onChange={handleMultipleImagesUpload}
+                        disabled={uploadingBanner}
                         className="hidden"
                       />
                     </label>
@@ -1190,26 +1163,26 @@ export function SettingsPage() {
                   </label>
 
                   {/* Previews Grid */}
-                  {platformInfo.bannerImages && platformInfo.bannerImages.length > 0 && (
+                  {banners.length > 0 && (
                     <div className="space-y-2 pt-2">
                       <div className="flex items-center justify-between text-xs font-semibold text-surface-500">
-                        <span>Yuklangan rasmlar ({platformInfo.bannerImages.length} ta):</span>
-                        <span className="text-[11px] text-surface-400">Birinchi rasm asosiy banner hisoblanadi</span>
+                        <span>Yuklangan rasmlar ({banners.length} ta):</span>
+                        <span className="text-[11px] text-surface-400">Asosiy rasm Hamkorlik sahifasida fon sifatida ko'rinadi</span>
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                        {platformInfo.bannerImages.map((imgUrl, idx) => (
+                        {banners.map((b) => (
                           <div
-                            key={idx}
+                            key={b.id}
                             className="group relative rounded-xl overflow-hidden border border-surface-200 bg-surface-100 aspect-video shadow-sm"
                           >
                             <img
-                              src={imgUrl}
-                              alt={`Banner ${idx + 1}`}
+                              src={mediaUrl(b.image_url)}
+                              alt="Banner"
                               className="w-full h-full object-cover"
                             />
 
-                            {idx === 0 && (
+                            {b.is_primary && (
                               <span className="absolute top-2 left-2 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md shadow-sm">
                                 Asosiy
                               </span>
@@ -1217,10 +1190,10 @@ export function SettingsPage() {
 
                             {/* Hover Actions Overlay */}
                             <div className="absolute inset-0 bg-surface-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-2">
-                              {idx !== 0 && (
+                              {!b.is_primary && (
                                 <button
                                   type="button"
-                                  onClick={() => handleSetPrimaryBannerImage(idx)}
+                                  onClick={() => handleSetPrimaryBannerImage(b.id)}
                                   className="px-2 py-1 bg-white text-surface-900 rounded-md text-[11px] font-bold shadow hover:bg-surface-100 transition-colors"
                                   title="Asosiy rasm qilish"
                                 >
@@ -1229,7 +1202,7 @@ export function SettingsPage() {
                               )}
                               <button
                                 type="button"
-                                onClick={() => handleRemoveBannerImage(idx)}
+                                onClick={() => handleRemoveBannerImage(b.id)}
                                 className="p-1.5 bg-danger-600 text-white rounded-md hover:bg-danger-700 shadow transition-colors"
                                 title="O'chirish"
                               >
@@ -1241,42 +1214,6 @@ export function SettingsPage() {
                       </div>
                     </div>
                   )}
-
-                  {/* Manual URL input fallback */}
-                  <div className="pt-2">
-                    <label className="block text-[11px] font-semibold text-surface-500 mb-1">
-                      Yoki to'g'ridan-to'g'ri rasm havolasini (URL) kiriting:
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="url"
-                        placeholder="https://images.unsplash.com/..."
-                        value={platformInfo.heroImageUrl}
-                        onChange={(e) =>
-                          setPlatformInfo((p) => ({ ...p, heroImageUrl: e.target.value }))
-                        }
-                        className="flex-1 px-3 py-1.5 text-xs border border-surface-200 rounded-lg outline-none focus:ring-1 focus:ring-brand-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (platformInfo.heroImageUrl) {
-                            setPlatformInfo((p) => {
-                              const existing = Array.isArray(p.bannerImages) ? p.bannerImages : [];
-                              if (!existing.includes(platformInfo.heroImageUrl)) {
-                                return { ...p, bannerImages: [...existing, platformInfo.heroImageUrl] };
-                              }
-                              return p;
-                            });
-                            toast.success("Rasm havolasi ro'yxatga qo'shildi");
-                          }
-                        }}
-                        className="px-3 py-1.5 bg-surface-100 hover:bg-surface-200 text-surface-700 text-xs font-semibold rounded-lg border border-surface-200 transition-colors"
-                      >
-                        Qo'shish
-                      </button>
-                    </div>
-                  </div>
                 </div>
 
                 <div>
@@ -1285,9 +1222,9 @@ export function SettingsPage() {
                   </label>
                   <input
                     type="url"
-                    value={platformInfo.botUrl}
+                    value={platformInfo.telegram_bot_url}
                     onChange={(e) =>
-                      setPlatformInfo((p) => ({ ...p, botUrl: e.target.value }))
+                      setPlatformInfo((p) => (p ? { ...p, telegram_bot_url: e.target.value } : p))
                     }
                     placeholder="https://t.me/JoyBorobot"
                     className="w-full px-3.5 py-2.5 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
@@ -1300,9 +1237,9 @@ export function SettingsPage() {
                   </label>
                   <input
                     type="url"
-                    value={platformInfo.supportLink}
+                    value={platformInfo.support_url}
                     onChange={(e) =>
-                      setPlatformInfo((p) => ({ ...p, supportLink: e.target.value }))
+                      setPlatformInfo((p) => (p ? { ...p, support_url: e.target.value } : p))
                     }
                     placeholder="https://t.me/JoyBorobot"
                     className="w-full px-3.5 py-2.5 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
@@ -1315,9 +1252,9 @@ export function SettingsPage() {
                   </label>
                   <textarea
                     rows={3}
-                    value={platformInfo.aboutText}
+                    value={platformInfo.about}
                     onChange={(e) =>
-                      setPlatformInfo((p) => ({ ...p, aboutText: e.target.value }))
+                      setPlatformInfo((p) => (p ? { ...p, about: e.target.value } : p))
                     }
                     className="w-full px-3.5 py-2.5 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
                   />
@@ -1340,7 +1277,9 @@ export function SettingsPage() {
           {/* ========================================================================= */}
           {/* TAB 4: ALOQA VA IJTIMOIY TARMOQLAR */}
           {/* ========================================================================= */}
-          {activeTab === 'contacts_socials' && (
+          {activeTab === 'contacts_socials' && contactsLoading && <FormCardSkeleton />}
+
+          {activeTab === 'contacts_socials' && !contactsLoading && (
             <form onSubmit={handleSaveContacts} className="bg-white rounded-xl border border-surface-200 p-6 shadow-sm space-y-6">
               <div>
                 <h3 className="text-base font-bold text-surface-900 flex items-center gap-2">
@@ -1387,11 +1326,11 @@ export function SettingsPage() {
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
                         <input
                           type="text"
-                          value={contacts.secondaryPhone || ''}
+                          value={contacts.phone_extra}
                           onChange={(e) =>
                             setContacts((c) => ({
                               ...c,
-                              secondaryPhone: formatUzbekPhone(e.target.value),
+                              phone_extra: formatUzbekPhone(e.target.value),
                             }))
                           }
                           className="w-full pl-9 pr-3.5 py-2.5 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
@@ -1424,9 +1363,9 @@ export function SettingsPage() {
                         <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
                         <input
                           type="text"
-                          value={contacts.workingHours}
+                          value={contacts.working_hours}
                           onChange={(e) =>
-                            setContacts((c) => ({ ...c, workingHours: e.target.value }))
+                            setContacts((c) => ({ ...c, working_hours: e.target.value }))
                           }
                           placeholder="Dushanba - Shanba: 09:00 - 18:00"
                           className="w-full pl-9 pr-3.5 py-2.5 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
@@ -1466,9 +1405,9 @@ export function SettingsPage() {
                         <Send className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sky-500" />
                         <input
                           type="url"
-                          value={contacts.telegramUrl}
+                          value={contacts.telegram_url}
                           onChange={(e) =>
-                            setContacts((c) => ({ ...c, telegramUrl: e.target.value }))
+                            setContacts((c) => ({ ...c, telegram_url: e.target.value }))
                           }
                           placeholder="https://t.me/JoyBorobot"
                           className="w-full pl-9 pr-3.5 py-2.5 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
@@ -1484,9 +1423,9 @@ export function SettingsPage() {
                         <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-500" />
                         <input
                           type="url"
-                          value={contacts.instagramUrl}
+                          value={contacts.instagram_url}
                           onChange={(e) =>
-                            setContacts((c) => ({ ...c, instagramUrl: e.target.value }))
+                            setContacts((c) => ({ ...c, instagram_url: e.target.value }))
                           }
                           placeholder="https://instagram.com/joybor_uz"
                           className="w-full pl-9 pr-3.5 py-2.5 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
@@ -1502,9 +1441,9 @@ export function SettingsPage() {
                         <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-600" />
                         <input
                           type="url"
-                          value={contacts.youtubeUrl}
+                          value={contacts.youtube_url}
                           onChange={(e) =>
-                            setContacts((c) => ({ ...c, youtubeUrl: e.target.value }))
+                            setContacts((c) => ({ ...c, youtube_url: e.target.value }))
                           }
                           placeholder="https://youtube.com/@joybor"
                           className="w-full pl-9 pr-3.5 py-2.5 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
@@ -1520,9 +1459,9 @@ export function SettingsPage() {
                         <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-600" />
                         <input
                           type="url"
-                          value={contacts.websiteUrl}
+                          value={contacts.website_url}
                           onChange={(e) =>
-                            setContacts((c) => ({ ...c, websiteUrl: e.target.value }))
+                            setContacts((c) => ({ ...c, website_url: e.target.value }))
                           }
                           placeholder="https://joy-bor.uz"
                           className="w-full pl-9 pr-3.5 py-2.5 text-sm border border-surface-200 rounded-lg focus:ring-1 focus:ring-brand-500 outline-none transition-colors"

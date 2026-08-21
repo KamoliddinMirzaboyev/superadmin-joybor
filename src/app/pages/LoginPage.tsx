@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { api } from '../../services/api';
+import { api, isSuperAdminUser } from '../../services/api';
 
 interface LoginPageProps {
   onSuccess: () => void;
@@ -22,23 +22,20 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
       sessionStorage.setItem('access', tokens.access);
       sessionStorage.setItem('refresh', tokens.refresh);
       sessionStorage.setItem('isAuth', 'true');
+      let me: Record<string, unknown>;
       try {
-        const me = await api.me();
-        const role = String(me.role || me.is_super_admin || '').toLowerCase();
-        const isSuper =
-          Boolean(me.is_super_admin) ||
-          role.includes('superadmin') ||
-          role.includes('super_admin') ||
-          role === 'superadmin';
-        if (role && !isSuper && !role.includes('admin')) {
-          api.logout();
-          setError('Bu hisob superadmin emas.');
-          return;
-        }
-        if (me.role) sessionStorage.setItem('userRole', String(me.role));
+        me = await api.me();
       } catch {
-        // /me/ cheklangan bo'lsa token bilan davom etamiz
+        api.logout();
+        setError("Profilni tekshirib bo'lmadi. Qayta urinib ko'ring.");
+        return;
       }
+      if (!isSuperAdminUser(me)) {
+        api.logout();
+        setError('Bu hisob superadmin emas. Faqat superadmin kira oladi.');
+        return;
+      }
+      if (me.role) sessionStorage.setItem('userRole', String(me.role));
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kirish muvaffaqiyatsiz');
@@ -48,16 +45,16 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 dark:from-surface-950 dark:via-surface-900 dark:to-surface-950 px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-surface-200 p-8 space-y-4"
+        className="w-full max-w-md bg-white dark:bg-surface-900 rounded-2xl shadow-sm border border-surface-200 dark:border-surface-800 p-8 space-y-4"
       >
         <div className="text-center mb-4">
           <div className="w-14 h-14 mx-auto mb-3 bg-brand-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-sm">
             JB
           </div>
-          <h1 className="text-2xl font-bold text-surface-900">Xush kelibsiz</h1>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">Xush kelibsiz</h1>
           <p className="text-sm text-surface-500 mt-1">JoyBor Superadmin paneliga kirish</p>
         </div>
         {error && (
@@ -71,7 +68,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
           </label>
           <input
             id="login"
-            className="w-full px-3.5 py-2.5 border border-surface-300 rounded-xl bg-white text-surface-900 focus:ring-2 focus:ring-brand-500/40 focus:border-brand-600 outline-none transition-colors duration-150 text-sm"
+            className="w-full px-3.5 py-2.5 border border-surface-300 dark:border-surface-700 rounded-xl bg-white dark:bg-surface-800 text-surface-900 dark:text-white focus:ring-2 focus:ring-brand-500/40 focus:border-brand-600 outline-none transition-colors duration-150 text-sm"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
@@ -88,7 +85,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
-              className="w-full px-3.5 py-2.5 pr-10 border border-surface-300 rounded-xl bg-white text-surface-900 focus:ring-2 focus:ring-brand-500/40 focus:border-brand-600 outline-none transition-colors duration-150 text-sm"
+              className="w-full px-3.5 py-2.5 pr-10 border border-surface-300 dark:border-surface-700 rounded-xl bg-white dark:bg-surface-800 text-surface-900 dark:text-white focus:ring-2 focus:ring-brand-500/40 focus:border-brand-600 outline-none transition-colors duration-150 text-sm"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"

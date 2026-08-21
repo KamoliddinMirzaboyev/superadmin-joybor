@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   RefreshCw,
   UserPlus,
@@ -54,6 +54,8 @@ type RoleFilter = 'all' | 'superadmin' | 'admin' | 'floor_leader' | 'student';
 type StatusFilter = 'all' | 'active' | 'inactive';
 type SortOption = 'newest' | 'oldest' | 'name_asc' | 'name_desc' | 'role';
 
+const PAGE_SIZE = 20;
+
 /**
  * Telefon raqamini formatlash
  */
@@ -104,6 +106,11 @@ export function UsersPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+
+  // Scroll pagination: bir vaqtda faqat bitta "sahifa" render qilinadi
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const loadMoreRef = useRef<HTMLTableRowElement>(null);
+  const scrollBodyRef = useRef<HTMLDivElement>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -245,6 +252,34 @@ export function UsersPage() {
 
     return list;
   }, [allUsers, search, roleFilter, statusFilter, sortBy]);
+
+  // Filtr o'zgarganda faqat birinchi sahifani qayta ko'rsatamiz
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+    scrollBodyRef.current?.scrollTo({ top: 0 });
+  }, [search, roleFilter, statusFilter, sortBy]);
+
+  const visibleUsers = useMemo(
+    () => filteredUsers.slice(0, visibleCount),
+    [filteredUsers, visibleCount]
+  );
+
+  // Jadval pastiga yetganda keyingi sahifani yuklaymiz (IntersectionObserver)
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    const root = scrollBodyRef.current;
+    if (!sentinel || !root) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, filteredUsers.length));
+        }
+      },
+      { root, rootMargin: '200px' }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [filteredUsers.length]);
 
   const displayName = (u: AppUser) =>
     u.full_name ||
@@ -584,9 +619,9 @@ export function UsersPage() {
             <TableSkeleton cols={5} rows={8} />
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div ref={scrollBodyRef} className="overflow-auto max-h-[calc(100vh-480px)] min-h-[280px]">
             <table className="w-full text-left">
-              <thead className="bg-surface-50/80 border-b border-surface-200">
+              <thead className="sticky top-0 z-10 bg-surface-50 border-b border-surface-200">
                 <tr>
                   <th className="px-4 py-3.5 text-xs font-bold text-surface-500 uppercase tracking-wider">
                     Foydalanuvchi
@@ -627,7 +662,7 @@ export function UsersPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((u) => {
+                  visibleUsers.map((u) => {
                     const isActive = u.is_active !== false;
                     return (
                       <tr key={u.id} className="hover:bg-surface-50/60 transition-colors">
@@ -768,6 +803,13 @@ export function UsersPage() {
                     );
                   })
                 )}
+                {visibleCount < filteredUsers.length && (
+                  <tr ref={loadMoreRef}>
+                    <td colSpan={5} className="px-4 py-4 text-center text-xs text-surface-400">
+                      Yuklanmoqda...
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -777,7 +819,7 @@ export function UsersPage() {
         {!loading && filteredUsers.length > 0 && (
           <div className="px-4 py-3 bg-surface-50 border-t border-surface-200 flex items-center justify-between text-xs text-surface-500 font-medium">
             <span>
-              Ko'rsatilmoqda: <strong>{filteredUsers.length}</strong> / {allUsers.length} ta foydalanuvchi
+              Yuklangan: <strong>{visibleUsers.length}</strong> / {filteredUsers.length} ta (jami {allUsers.length})
             </span>
             <span>JoyBor Superadmin tizimi</span>
           </div>

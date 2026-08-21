@@ -63,12 +63,12 @@ export function DashboardPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900">Dashboard</h1>
-          <p className="text-sm text-surface-500">Tizimning umumiy ko‘rinishi</p>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">Dashboard</h1>
+          <p className="text-sm text-surface-500 dark:text-surface-400">Tizimning umumiy ko‘rinishi</p>
         </div>
         <button
           onClick={load}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-surface-200 text-sm text-surface-700 hover:bg-surface-50 transition-colors duration-150"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-surface-200 dark:border-surface-700 text-sm text-surface-700 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors duration-150"
         >
           <RefreshCw className="w-4 h-4" />
           Yangilash
@@ -121,24 +121,24 @@ export function DashboardPage() {
         />
       </div>
 
-      <div className="bg-white rounded-2xl border border-surface-200 shadow-sm p-6">
-        <h2 className="font-semibold text-surface-900 mb-4">Xona bandligi</h2>
+      <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm p-6">
+        <h2 className="font-semibold text-surface-900 dark:text-white mb-4">Xona bandligi</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <p className="text-surface-500">Band</p>
-            <p className="text-xl font-bold text-surface-900">{num(pick(rooms, 'occupied'))}</p>
+            <p className="text-surface-500 dark:text-surface-400">Band</p>
+            <p className="text-xl font-bold text-surface-900 dark:text-white">{num(pick(rooms, 'occupied'))}</p>
           </div>
           <div>
-            <p className="text-surface-500">Bo&apos;sh</p>
-            <p className="text-xl font-bold text-surface-900">{num(pick(rooms, 'free'))}</p>
+            <p className="text-surface-500 dark:text-surface-400">Bo&apos;sh</p>
+            <p className="text-xl font-bold text-surface-900 dark:text-white">{num(pick(rooms, 'free'))}</p>
           </div>
           <div>
-            <p className="text-surface-500">Bandlik</p>
-            <p className="text-xl font-bold text-surface-900">{num(pick(rooms, 'occupancy_rate'))}%</p>
+            <p className="text-surface-500 dark:text-surface-400">Bandlik</p>
+            <p className="text-xl font-bold text-surface-900 dark:text-white">{num(pick(rooms, 'occupancy_rate'))}%</p>
           </div>
           <div>
-            <p className="text-surface-500">Sardorlar</p>
-            <p className="text-xl font-bold text-surface-900">{num(pick(users, 'sardor'))}</p>
+            <p className="text-surface-500 dark:text-surface-400">Sardorlar</p>
+            <p className="text-xl font-bold text-surface-900 dark:text-white">{num(pick(users, 'sardor'))}</p>
           </div>
         </div>
       </div>

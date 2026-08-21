@@ -99,6 +99,42 @@ export interface TariffPlan {
 
 export type TariffPlanInput = Omit<TariffPlan, 'id' | 'year_label'>;
 
+export interface PlatformBanner {
+  id: number;
+  image: string;
+  image_url: string;
+  source_url: string;
+  is_primary: boolean;
+  sort_order: number;
+  created_at?: string;
+}
+
+export interface PlatformSettings {
+  official_name: string;
+  hero_title: string;
+  hero_subtitle: string;
+  telegram_bot_url: string;
+  support_url: string;
+  about: string;
+  banners: PlatformBanner[];
+  updated_at?: string;
+}
+
+export type PlatformSettingsInput = Omit<PlatformSettings, 'banners' | 'updated_at'>;
+
+export interface ContactInfo {
+  phone: string;
+  phone_extra: string;
+  email: string;
+  working_hours: string;
+  address: string;
+  telegram_url: string;
+  instagram_url: string;
+  youtube_url: string;
+  website_url: string;
+  updated_at?: string;
+}
+
 export type Paginated<T> = {
   count: number;
   next: string | null;
@@ -379,6 +415,62 @@ export const api = {
 
   deleteTariff: (id: number | string) =>
     apiFetch(`/superadmin/tariffs/${id}/`, { method: 'DELETE' }),
+
+  getContact: () => apiFetch<ContactInfo>('/superadmin/contact/'),
+
+  // Obuna to'lovlari (yotoqxonalarning SaaS tarifiga to'lovlari)
+  getSubscriptionPayments: (params?: { dormitory?: number; status?: string; period?: string; ordering?: string; page?: number }) =>
+    apiFetch(`/dormitory-payments/${qs(params)}`),
+
+  approveDormitoryPayment: (id: number | string, admin_comment = '') =>
+    apiFetch(`/superadmin/dormitory-payments/${id}/approve/`, {
+      method: 'POST',
+      body: JSON.stringify({ admin_comment }),
+    }),
+
+  rejectDormitoryPayment: (id: number | string, admin_comment = '') =>
+    apiFetch(`/superadmin/dormitory-payments/${id}/reject/`, {
+      method: 'POST',
+      body: JSON.stringify({ admin_comment }),
+    }),
+
+  // Shikoyat va takliflar
+  getComplaints: (params?: { status?: string; category?: string; page?: number }) =>
+    apiFetch(`/complaints/${qs(params)}`),
+
+  updateComplaint: (id: number | string, data: { status?: string; admin_response?: string }) =>
+    apiFetch(`/complaints/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  updateContact: (data: ContactInfo) =>
+    apiFetch<ContactInfo>('/superadmin/contact/', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  getPlatform: () => apiFetch<PlatformSettings>('/superadmin/platform/'),
+
+  updatePlatform: (data: PlatformSettingsInput) =>
+    apiFetch<PlatformSettings>('/superadmin/platform/', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  createBanner: (data: FormData) =>
+    apiFetch<PlatformBanner>('/superadmin/platform/banners/', {
+      method: 'POST',
+      body: data,
+    }),
+
+  updateBanner: (id: number, data: Partial<Pick<PlatformBanner, 'is_primary' | 'sort_order' | 'source_url'>>) =>
+    apiFetch<PlatformBanner>(`/superadmin/platform/banners/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  deleteBanner: (id: number) => apiFetch(`/superadmin/platform/banners/${id}/`, { method: 'DELETE' }),
 };
 
 export default api;

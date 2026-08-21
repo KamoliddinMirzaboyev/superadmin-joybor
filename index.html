@@ -6,7 +6,17 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="icon" type="image/svg+xml" href="/logo.svg" />
       <link rel="apple-touch-icon" href="/logo.svg" />
-      <title>Professional Superadmin Panel Design</title>
+      <title>JoyBor Superadmin</title>
+      <script>
+        (function () {
+          try {
+            var t = localStorage.getItem('joybor-sa-theme');
+            if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+              document.documentElement.classList.add('dark');
+            }
+          } catch (e) {}
+        })();
+      </script>
     </head>
 
     <body>

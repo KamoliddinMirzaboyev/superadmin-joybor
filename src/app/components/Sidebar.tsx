@@ -4,8 +4,8 @@ import {
   Building2,
   Home,
   Users,
-  Coins,
-  Calendar,
+  Receipt,
+  MessageSquareWarning,
   FileText,
   BarChart3,
   Settings,
@@ -22,8 +22,8 @@ const menuItems = [
   { id: 'universities', label: 'Universitetlar', icon: Building2 },
   { id: 'dormitories', label: 'Yotoqxonalar', icon: Home },
   { id: 'users', label: 'Foydalanuvchilar', icon: Users },
-  { id: 'payments', label: "To'lovlar", icon: Coins },
-  { id: 'attendance', label: 'Davomat', icon: Calendar },
+  { id: 'dormitory-payments', label: "Obuna to'lovlari", icon: Receipt },
+  { id: 'complaints', label: 'Shikoyatlar', icon: MessageSquareWarning },
   { id: 'applications', label: 'Arizalar', icon: FileText },
   { id: 'reports', label: 'Hisobotlar', icon: BarChart3 },
   { id: 'settings', label: 'Sozlamalar', icon: Settings },
@@ -49,14 +49,14 @@ export function Sidebar({ activeItem, onNavigate }: SidebarProps) {
   }, []);
 
   return (
-    <aside className="w-64 h-full bg-white border-r border-surface-200 flex flex-col">
-      <div className="px-5 py-5 border-b border-surface-200">
+    <aside className="w-64 h-full bg-white dark:bg-surface-900 border-r border-surface-200 dark:border-surface-800 flex flex-col">
+      <div className="px-5 py-5 border-b border-surface-200 dark:border-surface-800">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white font-bold">
             JB
           </div>
           <div>
-            <h1 className="font-bold text-surface-900 leading-tight">JoyBor</h1>
+            <h1 className="font-bold text-surface-900 dark:text-white leading-tight">JoyBor</h1>
             <p className="text-xs text-surface-500">Superadmin</p>
           </div>
         </div>
@@ -73,8 +73,8 @@ export function Sidebar({ activeItem, onNavigate }: SidebarProps) {
               onClick={() => onNavigate(item.id)}
               className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 text-sm font-medium transition-colors duration-150 ${
                 isActive
-                  ? 'bg-brand-50 text-brand-700'
-                  : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900'
+                  ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300'
+                  : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-white'
               }`}
             >
               {isActive && (
@@ -87,13 +87,13 @@ export function Sidebar({ activeItem, onNavigate }: SidebarProps) {
         })}
       </nav>
 
-      <div className="p-4 border-t border-surface-200">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-50 border border-surface-200">
+      <div className="p-4 border-t border-surface-200 dark:border-surface-800">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700">
           <div className="w-10 h-10 rounded-full bg-brand-600 flex items-center justify-center text-white text-sm font-semibold">
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-surface-900 truncate">{displayName}</p>
+            <p className="text-sm font-semibold text-surface-900 dark:text-white truncate">{displayName}</p>
             <p className="text-xs text-surface-500">Superadmin</p>
           </div>
         </div>

@@ -167,9 +167,13 @@
   }
 
   body {
-    @apply bg-surface-50 text-surface-900;
+    @apply bg-surface-50 text-surface-900 dark:bg-surface-950 dark:text-surface-50;
     font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-feature-settings: 'cv11';
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   :focus-visible {
@@ -226,5 +230,253 @@
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
+  }
+}
+
+/*
+ * Dark-mode overrides in @layer utilities
+ * so they match Tailwind utility specificity.
+ * html.dark .X has specificity 0-2-0 which beats bare .X (0-1-0)
+ * when both are in the same layer.
+ */
+@layer utilities {
+  /* Card surface and its "light panel" (bg-surface-50) share one tone in
+     dark mode, matching every dark:bg-surface-900 used directly elsewhere
+     (Header, Sidebar, ...) — avoids a striped look where a thead or panel
+     sits a visibly different shade from the card around it. Form controls
+     get their own distinct, always-visible background below regardless of
+     which bg-* class they carry. */
+  html.dark .bg-white {
+    background-color: var(--color-surface-900);
+  }
+
+  html.dark .bg-surface-50 {
+    background-color: var(--color-surface-900);
+  }
+
+  html.dark .bg-surface-100 {
+    background-color: var(--color-surface-700);
+  }
+
+  html.dark .bg-surface-200,
+  html.dark .bg-surface-300 {
+    background-color: var(--color-surface-600);
+  }
+
+  html.dark .border-surface-200 {
+    border-color: var(--color-surface-700);
+  }
+
+  html.dark .border-surface-100 {
+    border-color: var(--color-surface-700);
+  }
+
+  html.dark .border-surface-300 {
+    border-color: var(--color-surface-600);
+  }
+
+  html.dark .text-surface-900,
+  html.dark .text-surface-800,
+  html.dark .text-surface-700 {
+    color: var(--color-surface-100);
+  }
+
+  html.dark .text-surface-600 {
+    color: var(--color-surface-300);
+  }
+
+  html.dark .text-surface-500 {
+    color: var(--color-surface-400);
+  }
+
+  html.dark .text-surface-400 {
+    color: var(--color-surface-400);
+  }
+
+  html.dark .hover\:bg-surface-50:hover,
+  html.dark .hover\:bg-surface-100:hover {
+    background-color: var(--color-surface-700);
+  }
+
+  html.dark .hover\:bg-surface-200:hover,
+  html.dark .hover\:bg-surface-300:hover {
+    background-color: var(--color-surface-600);
+  }
+
+  html.dark .hover\:text-surface-900:hover,
+  html.dark .hover\:text-surface-800:hover {
+    color: var(--color-surface-50);
+  }
+
+  /* Table thead bg-surface-50 */
+  html.dark .bg-surface-50\/80 {
+    background-color: rgba(30, 41, 59, 0.8);
+  }
+
+  /* focus states */
+  html.dark .focus\:bg-white:focus {
+    background-color: var(--color-surface-800);
+  }
+
+  /* Opacity variants */
+  html.dark .bg-white\/90 {
+    background-color: rgba(30, 41, 59, 0.9);
+  }
+
+  html.dark .bg-white\/20 {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Specific page element fixes */
+  html.dark .divide-y > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--color-surface-700);
+  }
+
+  /* Modal & overlay backgrounds */
+  html.dark .bg-surface-900\/60 {
+    background-color: rgba(15, 23, 42, 0.6);
+  }
+
+  /* Toast & skeleton backgrounds */
+  html.dark .animate-pulse {
+    background-color: var(--color-surface-700);
+  }
+
+  /* Any bare/unstyled surface-50/100/200 opacity variant (search bars, hover
+     panels) that a page uses without its own dark: class. */
+  html.dark [class*="bg-surface-50/"] {
+    background-color: rgba(15, 23, 42, 0.7);
+  }
+  html.dark [class*="bg-surface-100/"] {
+    background-color: rgba(51, 65, 85, 0.7);
+  }
+  html.dark [class*="bg-surface-200/"] {
+    background-color: rgba(51, 65, 85, 0.85);
+  }
+
+  /* Form controls with no explicit dark styling: give every bare input/
+     select/textarea a visible, distinct-from-card background and border. */
+  html.dark input:not([class*="dark:bg-"]),
+  html.dark select:not([class*="dark:bg-"]),
+  html.dark textarea:not([class*="dark:bg-"]) {
+    background-color: var(--color-surface-800);
+    border-color: var(--color-surface-700);
+    color: var(--color-surface-50);
+  }
+  html.dark input::placeholder,
+  html.dark textarea::placeholder {
+    color: var(--color-surface-400);
+  }
+
+  /* Tone (pastel) backgrounds + coloured text: translucent dark equivalents.
+     Moved from @layer base, where they were dead — a bare Tailwind utility
+     like .bg-brand-50 lives in the utilities layer too and always won
+     regardless of selector specificity, so these never applied there. */
+  html.dark .bg-brand-50,
+  html.dark .bg-brand-100 {
+    background-color: rgba(59, 130, 246, 0.14);
+  }
+  html.dark .bg-success-50,
+  html.dark .bg-success-100 {
+    background-color: rgba(16, 185, 129, 0.14);
+  }
+  html.dark .bg-danger-50,
+  html.dark .bg-danger-100 {
+    background-color: rgba(244, 63, 94, 0.14);
+  }
+  html.dark .bg-warning-50,
+  html.dark .bg-warning-100 {
+    background-color: rgba(245, 158, 11, 0.14);
+  }
+  html.dark .bg-info-50,
+  html.dark .bg-info-100 {
+    background-color: rgba(2, 132, 199, 0.14);
+  }
+
+  html.dark .text-brand-600,
+  html.dark .text-brand-700 {
+    color: #60a5fa;
+  }
+  html.dark .text-success-600,
+  html.dark .text-success-700 {
+    color: #34d399;
+  }
+  html.dark .text-danger-600,
+  html.dark .text-danger-700 {
+    color: #fb7185;
+  }
+  html.dark .text-warning-600,
+  html.dark .text-warning-700,
+  html.dark .text-warning-800 {
+    color: #fbbf24;
+  }
+  html.dark .text-info-600 {
+    color: #38bdf8;
+  }
+
+  html.dark .border-brand-100,
+  html.dark .border-brand-600 {
+    border-color: rgba(59, 130, 246, 0.4);
+  }
+  html.dark .border-success-100,
+  html.dark .border-success-200 {
+    border-color: rgba(16, 185, 129, 0.4);
+  }
+  html.dark .border-danger-100 {
+    border-color: rgba(244, 63, 94, 0.4);
+  }
+  html.dark .border-warning-200 {
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+  html.dark .border-info-100 {
+    border-color: rgba(2, 132, 199, 0.4);
+  }
+
+  /* Default Tailwind palette tones used in pages (emerald/amber/purple/rose/sky/red) */
+  html.dark .bg-emerald-50 {
+    background-color: rgba(16, 185, 129, 0.14);
+  }
+  html.dark .bg-amber-50 {
+    background-color: rgba(245, 158, 11, 0.14);
+  }
+  html.dark .bg-purple-50 {
+    background-color: rgba(168, 85, 247, 0.14);
+  }
+  html.dark .bg-red-50 {
+    background-color: rgba(244, 63, 94, 0.14);
+  }
+
+  html.dark .text-emerald-500,
+  html.dark .text-emerald-600,
+  html.dark .text-emerald-700 {
+    color: #6ee7b7;
+  }
+  html.dark .text-amber-500,
+  html.dark .text-amber-600,
+  html.dark .text-amber-700 {
+    color: #fcd34d;
+  }
+  html.dark .text-purple-600,
+  html.dark .text-purple-700 {
+    color: #d8b4fe;
+  }
+  html.dark .text-sky-500 {
+    color: #7dd3fc;
+  }
+  html.dark .text-rose-500 {
+    color: #fda4af;
+  }
+  html.dark .text-red-600 {
+    color: #fca5a5;
+  }
+
+  html.dark .border-emerald-200 {
+    border-color: rgba(16, 185, 129, 0.4);
+  }
+  html.dark .border-amber-200 {
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+  html.dark .border-purple-200 {
+    border-color: rgba(168, 85, 247, 0.4);
   }
 }

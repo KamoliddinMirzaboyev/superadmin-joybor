@@ -17,9 +17,9 @@ const tone = {
 
 export function KPICard({ title, icon: Icon, color, stats }: KPICardProps) {
   return (
-    <div className="bg-white border border-surface-200 rounded-2xl shadow-sm p-5">
+    <div className="bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-2xl shadow-sm p-5">
       <div className="flex items-start justify-between mb-4">
-        <h3 className="text-sm font-medium text-surface-500">{title}</h3>
+        <h3 className="text-sm font-medium text-surface-500 dark:text-surface-400">{title}</h3>
         <span className={`w-10 h-10 rounded-xl flex items-center justify-center ${tone[color]}`}>
           <Icon className="w-5 h-5" />
         </span>
@@ -27,8 +27,8 @@ export function KPICard({ title, icon: Icon, color, stats }: KPICardProps) {
       <div className="space-y-2.5">
         {stats.map((stat) => (
           <div key={stat.label} className="flex items-center justify-between">
-            <span className="text-sm text-surface-500">{stat.label}</span>
-            <span className="text-lg font-semibold text-surface-900">{stat.value}</span>
+            <span className="text-sm text-surface-500 dark:text-surface-400">{stat.label}</span>
+            <span className="text-lg font-semibold text-surface-900 dark:text-white">{stat.value}</span>
           </div>
         ))}
       </div>
