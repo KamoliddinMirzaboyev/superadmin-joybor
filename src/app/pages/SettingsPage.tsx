@@ -757,11 +757,11 @@ export function SettingsPage() {
 
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                     {/* Hisoblash formulasi Card */}
-                    <div className="bg-brand-50/60 rounded-xl border border-brand-200 p-5 text-center flex flex-col justify-center">
-                      <p className="text-[11px] font-bold text-brand-700 uppercase tracking-widest mb-2">
+                    <div className="bg-brand-50/60 dark:bg-brand-900/20 rounded-xl border border-brand-200 dark:border-brand-800/60 p-5 text-center flex flex-col justify-center">
+                      <p className="text-[11px] font-bold text-brand-700 dark:text-brand-300 uppercase tracking-widest mb-2">
                         Hisoblash formulasi
                       </p>
-                      <div className="text-sm sm:text-base font-black text-brand-900 bg-white py-2.5 px-3 rounded-lg border border-brand-200 shadow-sm font-mono">
+                      <div className="text-sm sm:text-base font-black text-brand-900 dark:text-brand-200 bg-white py-2.5 px-3 rounded-lg border border-brand-200 dark:border-brand-800/60 shadow-sm font-mono">
                         Talabalar × Ijara narxi × {flexibleConfig.rateMultiplier}
                       </div>
                     </div>
@@ -788,17 +788,17 @@ export function SettingsPage() {
                     </div>
 
                     {/* Asosiy Qulayliklar Card */}
-                    <div className="bg-success-50/70 rounded-xl border border-success-200 p-5 space-y-2">
-                      <p className="text-xs font-bold text-success-800 uppercase tracking-wider">
+                    <div className="bg-success-50/70 dark:bg-success-900/20 rounded-xl border border-success-200 dark:border-success-800/60 p-5 space-y-2">
+                      <p className="text-xs font-bold text-success-800 dark:text-success-300 uppercase tracking-wider">
                         Asosiy qulayliklar
                       </p>
-                      <ul className="space-y-1.5 text-xs text-success-900 font-medium">
+                      <ul className="space-y-1.5 text-xs text-success-900 dark:text-success-200 font-medium">
                         <li className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-success-600 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-success-600 dark:text-success-400 shrink-0" />
                           <span>Bo'sh joylar uchun to'lov yo'q</span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-success-600 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-success-600 dark:text-success-400 shrink-0" />
                           <span>Iyul-Avgustda to'lov: <strong>0 so'm</strong></span>
                         </li>
                       </ul>
@@ -844,7 +844,7 @@ export function SettingsPage() {
                       </div>
                     </div>
 
-                    <div className="p-4 bg-brand-50 rounded-lg border border-brand-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
+                    <div className="p-4 bg-brand-50 dark:bg-brand-900/20 rounded-lg border border-brand-200 dark:border-brand-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
                       <div>
                         <p className="text-surface-500 font-medium text-xs">Yotoqxona oylik daromadi:</p>
                         <p className="text-base font-bold text-surface-900">
@@ -853,10 +853,10 @@ export function SettingsPage() {
                       </div>
 
                       <div className="sm:text-right">
-                        <p className="text-brand-600 font-medium text-xs">
+                        <p className="text-brand-600 dark:text-brand-400 font-medium text-xs">
                           JoyBor dastur haqi ({+(flexibleConfig.rateMultiplier * 100).toFixed(2)}%):
                         </p>
-                        <p className="text-lg font-black text-brand-700">
+                        <p className="text-lg font-black text-brand-700 dark:text-brand-300">
                           {calcPlatformFee.toLocaleString('uz-UZ')} so'm / oy
                         </p>
                       </div>
