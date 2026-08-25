@@ -435,11 +435,20 @@ export const api = {
     }),
 
   // Shikoyat va takliflar
-  getComplaints: (params?: { status?: string; category?: string; page?: number }) =>
-    apiFetch(`/complaints/${qs(params)}`),
+  getComplaints: (params?: {
+    search?: string;
+    ordering?: string;
+    target_role?: string;
+    sender_role?: string;
+    type?: string;
+    status?: string;
+    category?: string;
+    dormitory?: number | string;
+    page?: number;
+  }) => apiFetch(`/superadmin/complaints/${qs(params)}`),
 
-  updateComplaint: (id: number | string, data: { status?: string; admin_response?: string }) =>
-    apiFetch(`/complaints/${id}/`, {
+  respondComplaint: (id: number | string, data: { status?: string; admin_response?: string }) =>
+    apiFetch(`/superadmin/complaints/${id}/respond/`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),

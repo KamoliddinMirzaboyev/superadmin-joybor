@@ -1,20 +1,32 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RefreshCw, MessageSquareWarning, Building2, User, X, Send } from 'lucide-react';
 import { toast } from 'sonner';
-import { api, unwrapList } from '../../services/api';
+import { api, unwrapList, mediaUrl } from '../../services/api';
 import { TableSkeleton } from '../components/Skeleton';
 
 interface Complaint {
   id: number;
-  student?: number;
+  type: string;
+  type_display?: string;
+  target_role: string;
+  target_role_display?: string;
+  sender_role?: string;
+  sender_role_display?: string;
+  user_username?: string;
   student_name?: string;
   dormitory?: number;
   dormitory_name?: string;
+  floor?: number;
+  floor_name?: string;
   category: string;
+  category_display?: string;
   title: string;
   description: string;
+  image?: string;
   status: string;
   admin_response?: string;
+  responded_by_username?: string;
+  responded_at?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -24,7 +36,29 @@ const CATEGORY_LABEL: Record<string, string> = {
   food: 'Ovqat',
   staff: 'Xodim',
   noise: "Shovqin",
+  cleanliness: 'Tozalik',
+  wifi: 'Wi-Fi',
+  equipment: 'Jihoz',
+  security: 'Xavfsizlik',
+  tariff: "Tarif/to'lov",
+  system: 'Platforma/tizim',
   other: 'Boshqa',
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  complaint: 'Shikoyat',
+  suggestion: 'Taklif',
+};
+
+const TARGET_LABEL: Record<string, string> = {
+  admin: 'Admin',
+  superadmin: 'Superadmin',
+};
+
+const SENDER_LABEL: Record<string, string> = {
+  student: 'Talaba',
+  sardor: 'Qavat sardori',
+  admin: 'Admin',
 };
 
 const STATUS_OPTIONS = [
@@ -47,9 +81,11 @@ export function ComplaintsPage() {
   const [items, setItems] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [dormFilter, setDormFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [targetFilter, setTargetFilter] = useState('');
   const [active, setActive] = useState<Complaint | null>(null);
   const [responseText, setResponseText] = useState('');
   const [saving, setSaving] = useState(false);
@@ -58,9 +94,12 @@ export function ComplaintsPage() {
     setLoading(true);
     setError('');
     try {
-      const params: { status?: string; category?: string } = {};
+      const params: Record<string, string> = {};
+      if (search) params.search = search;
       if (statusFilter) params.status = statusFilter;
       if (categoryFilter) params.category = categoryFilter;
+      if (typeFilter) params.type = typeFilter;
+      if (targetFilter) params.target_role = targetFilter;
       const data = await api.getComplaints(params);
       setItems(unwrapList<Complaint>(data));
     } catch (e) {
@@ -73,14 +112,7 @@ export function ComplaintsPage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, categoryFilter]);
-
-  const dormitories = useMemo(
-    () => Array.from(new Set(items.map((c) => c.dormitory_name).filter(Boolean))) as string[],
-    [items]
-  );
-
-  const filtered = items.filter((c) => !dormFilter || c.dormitory_name === dormFilter);
+  }, [statusFilter, categoryFilter, typeFilter, targetFilter]);
 
   const formatDate = (date?: string): string => {
     if (!date) return '—';
@@ -106,11 +138,11 @@ export function ComplaintsPage() {
     if (!active) return;
     setSaving(true);
     try {
-      const updated = await api.updateComplaint(active.id, {
+      const updated = await api.respondComplaint(active.id, {
         status,
         admin_response: responseText.trim(),
       });
-      toast.success('Shikoyat holati yangilandi');
+      toast.success('Murojaat holati yangilandi');
       setItems((prev) => prev.map((c) => (c.id === active.id ? { ...c, ...(updated as Complaint) } : c)));
       setActive(null);
     } catch (e) {
@@ -129,7 +161,7 @@ export function ComplaintsPage() {
             Shikoyatlar va takliflar
           </h1>
           <p className="text-sm text-surface-500 dark:text-surface-400 mt-1">
-            Talabalardan kelgan shikoyat va takliflar
+            Barcha yotoqxonalardan superadminga yuborilgan murojaatlar
           </p>
         </div>
         <button
@@ -145,7 +177,38 @@ export function ComplaintsPage() {
       {error && <div className="p-3 rounded-xl bg-danger-50 text-danger-700 text-sm">{error}</div>}
 
       {/* Filters */}
-      <div className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-4 flex flex-col sm:flex-row gap-3">
+      <div className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-4 flex flex-col sm:flex-row flex-wrap gap-3">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && load()}
+          placeholder="Qidirish..."
+          className="px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 rounded-xl text-sm text-surface-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500/30 transition-colors"
+        />
+        <select
+          value={targetFilter}
+          onChange={(e) => setTargetFilter(e.target.value)}
+          className="px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 rounded-xl text-sm text-surface-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500/30 transition-colors"
+        >
+          <option value="">Kimga: barchasi</option>
+          {Object.entries(TARGET_LABEL).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 rounded-xl text-sm text-surface-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500/30 transition-colors"
+        >
+          <option value="">Barcha turlar</option>
+          {Object.entries(TYPE_LABEL).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -163,35 +226,21 @@ export function ComplaintsPage() {
           onChange={(e) => setCategoryFilter(e.target.value)}
           className="px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 rounded-xl text-sm text-surface-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500/30 transition-colors"
         >
-          <option value="">Barcha turlar</option>
+          <option value="">Barcha kategoriyalar</option>
           {Object.entries(CATEGORY_LABEL).map(([value, label]) => (
             <option key={value} value={value}>
               {label}
             </option>
           ))}
         </select>
-        {dormitories.length > 0 && (
-          <select
-            value={dormFilter}
-            onChange={(e) => setDormFilter(e.target.value)}
-            className="px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 rounded-xl text-sm text-surface-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500/30 transition-colors"
-          >
-            <option value="">Barcha yotoqxonalar</option>
-            {dormitories.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        )}
       </div>
 
       {loading ? (
-        <TableSkeleton cols={5} />
-      ) : filtered.length === 0 ? (
+        <TableSkeleton cols={6} />
+      ) : items.length === 0 ? (
         <div className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-12 text-center">
           <MessageSquareWarning className="w-10 h-10 text-surface-300 dark:text-surface-600 mx-auto mb-2" />
-          <p className="text-sm font-medium text-surface-500 dark:text-surface-400">Shikoyatlar topilmadi</p>
+          <p className="text-sm font-medium text-surface-500 dark:text-surface-400">Murojaatlar topilmadi</p>
         </div>
       ) : (
         <div className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden">
@@ -200,14 +249,15 @@ export function ComplaintsPage() {
               <thead className="bg-surface-50 dark:bg-surface-700 border-b border-surface-200 dark:border-surface-600">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-300 uppercase">Mavzu</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-300 uppercase">Talaba / Yotoqxona</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-300 uppercase">Turi</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-300 uppercase">Yuboruvchi / Yotoqxona</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-300 uppercase">Kimga</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-300 uppercase">Turi / Kategoriya</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-300 uppercase">Sana</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-300 uppercase">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-200 dark:divide-surface-600">
-                {filtered.map((c) => (
+                {items.map((c) => (
                   <tr
                     key={c.id}
                     onClick={() => openDetail(c)}
@@ -220,15 +270,23 @@ export function ComplaintsPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 text-xs text-surface-600 dark:text-surface-300">
                         <User className="w-3.5 h-3.5 text-surface-400" />
-                        {c.student_name || '—'}
+                        {c.student_name || c.user_username || '—'}
+                        {c.sender_role && (
+                          <span className="text-surface-400">({SENDER_LABEL[c.sender_role] || c.sender_role})</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-surface-400 dark:text-surface-500 mt-0.5">
                         <Building2 className="w-3.5 h-3.5" />
                         {c.dormitory_name || '—'}
+                        {c.floor_name ? ` · ${c.floor_name}` : ''}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-surface-600 dark:text-surface-300">
-                      {CATEGORY_LABEL[c.category] || c.category}
+                      {c.target_role_display || TARGET_LABEL[c.target_role] || c.target_role}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-surface-600 dark:text-surface-300">
+                      {c.type_display || TYPE_LABEL[c.type] || c.type}
+                      <span className="text-surface-400"> · {c.category_display || CATEGORY_LABEL[c.category] || c.category}</span>
                     </td>
                     <td className="px-4 py-3 text-sm text-surface-600 dark:text-surface-300">
                       {formatDate(c.created_at)}
@@ -261,8 +319,9 @@ export function ComplaintsPage() {
               <div>
                 <h3 className="text-base font-bold text-surface-900 dark:text-white">{active.title}</h3>
                 <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
-                  {active.student_name || '—'} &middot; {active.dormitory_name || '—'} &middot;{' '}
-                  {CATEGORY_LABEL[active.category] || active.category}
+                  {active.student_name || active.user_username || '—'} &middot; {active.dormitory_name || '—'}
+                  {active.floor_name ? ` (${active.floor_name})` : ''} &middot;{' '}
+                  {active.category_display || CATEGORY_LABEL[active.category] || active.category}
                 </p>
               </div>
               <button
@@ -278,9 +337,17 @@ export function ComplaintsPage() {
                 {active.description}
               </p>
 
+              {active.image && (
+                <img
+                  src={mediaUrl(active.image)}
+                  alt=""
+                  className="max-h-56 rounded-xl border border-surface-200 dark:border-surface-700"
+                />
+              )}
+
               <div>
                 <label className="block text-[11px] font-bold text-surface-600 dark:text-surface-400 uppercase tracking-wider mb-1.5">
-                  Javob (talabaga ko'rinadi)
+                  Javob (yuboruvchiga ko'rinadi)
                 </label>
                 <textarea
                   value={responseText}

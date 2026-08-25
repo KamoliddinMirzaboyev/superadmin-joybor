@@ -15,7 +15,7 @@ import {
   Phone,
   User,
 } from 'lucide-react';
-import { api, unwrapList, mediaUrl } from '../../services/api';
+import { api, unwrapList, mediaUrl, type TariffPlan } from '../../services/api';
 import { CardsSkeleton } from '../components/Skeleton';
 
 interface Dorm {
@@ -33,6 +33,10 @@ interface Dorm {
   images?: Array<{ id: number; image: string }>;
   university?: number;
   admin?: number;
+  tariff?: number | null;
+  tariff_name?: string;
+  paid_until?: string | null;
+  last_billing_reminder?: string | null;
 }
 
 interface Uni {
@@ -51,6 +55,7 @@ export function DormitoriesPage() {
   const [items, setItems] = useState<Dorm[]>([]);
   const [unis, setUnis] = useState<Uni[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [tariffs, setTariffs] = useState<TariffPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -66,6 +71,8 @@ export function DormitoriesPage() {
     year_price: '',
     phone_numer: '',
     description: '',
+    tariff: '',
+    paid_until: '',
   };
   const [form, setForm] = useState(emptyForm);
 
@@ -73,14 +80,16 @@ export function DormitoriesPage() {
     setLoading(true);
     setError('');
     try {
-      const [data, u, a] = await Promise.all([
+      const [data, u, a, t] = await Promise.all([
         api.getDormitories({ search: search || undefined }),
         api.getUniversities(),
         api.getAdminUsers(),
+        api.getTariffs(),
       ]);
       setItems(unwrapList<Dorm>(data));
       setUnis(unwrapList<Uni>(u));
       setAdmins(unwrapList<AdminUser>(a));
+      setTariffs(unwrapList<TariffPlan>(t));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Yuklash xatosi');
       setItems([]);
@@ -115,6 +124,8 @@ export function DormitoriesPage() {
       year_price: d.year_price != null ? String(d.year_price) : '',
       phone_numer: d.phone_numer || '',
       description: '',
+      tariff: d.tariff != null ? String(d.tariff) : '',
+      paid_until: d.paid_until || '',
     });
     setShowCreate(true);
   };
@@ -155,6 +166,8 @@ export function DormitoriesPage() {
         year_price: form.year_price ? Number(form.year_price) : undefined,
         phone_numer: form.phone_numer || undefined,
         description: form.description || undefined,
+        tariff: form.tariff ? Number(form.tariff) : undefined,
+        paid_until: form.paid_until || undefined,
       };
       if (editingId) {
         await api.updateDormitory(editingId, data);
@@ -288,6 +301,30 @@ export function DormitoriesPage() {
             <input
               value={form.phone_numer}
               onChange={(e) => setForm((f) => ({ ...f, phone_numer: e.target.value }))}
+              className="mt-1 w-full px-3 py-2 border rounded-xl"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="text-surface-600">Tarif</span>
+            <select
+              value={form.tariff}
+              onChange={(e) => setForm((f) => ({ ...f, tariff: e.target.value }))}
+              className="mt-1 w-full px-3 py-2 border rounded-xl"
+            >
+              <option value="">Tanlanmagan</option>
+              {tariffs.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm">
+            <span className="text-surface-600">To'lov muddati</span>
+            <input
+              type="date"
+              value={form.paid_until}
+              onChange={(e) => setForm((f) => ({ ...f, paid_until: e.target.value }))}
               className="mt-1 w-full px-3 py-2 border rounded-xl"
             />
           </label>
@@ -436,6 +473,26 @@ export function DormitoriesPage() {
                         : '—'}
                     </span>
                   </div>
+
+                  {(d.tariff_name || d.paid_until) && (
+                    <div className="flex items-center justify-between rounded-xl bg-surface-50 border border-surface-100 px-3 py-2.5 text-sm">
+                      <span className="text-surface-500">
+                        {d.tariff_name || 'Tarif'}
+                      </span>
+                      {d.paid_until && (
+                        <span
+                          className={`font-semibold ${
+                            new Date(d.paid_until) < new Date()
+                              ? 'text-danger-600'
+                              : 'text-surface-900'
+                          }`}
+                        >
+                          {new Date(d.paid_until) < new Date() ? "Muddati o'tgan · " : ''}
+                          {d.paid_until}
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-1.5 text-sm text-surface-600">
                     {d.admin_name && (
