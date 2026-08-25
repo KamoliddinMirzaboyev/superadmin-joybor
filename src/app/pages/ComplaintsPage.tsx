@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw, MessageSquareWarning, Building2, User, X, Send } from 'lucide-react';
+import { RefreshCw, MessageSquareWarning, Building2, User, X, Send, Eye, ImageIcon, Calendar, Tag, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, unwrapList, mediaUrl } from '../../services/api';
 import { TableSkeleton } from '../components/Skeleton';
@@ -236,7 +236,7 @@ export function ComplaintsPage() {
       </div>
 
       {loading ? (
-        <TableSkeleton cols={6} />
+        <TableSkeleton cols={7} />
       ) : items.length === 0 ? (
         <div className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-12 text-center">
           <MessageSquareWarning className="w-10 h-10 text-surface-300 dark:text-surface-600 mx-auto mb-2" />
@@ -254,6 +254,7 @@ export function ComplaintsPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-300 uppercase">Turi / Kategoriya</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-300 uppercase">Sana</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-300 uppercase">Status</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-surface-500 dark:text-surface-300 uppercase">Amal</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-200 dark:divide-surface-600">
@@ -264,7 +265,10 @@ export function ComplaintsPage() {
                     className="hover:bg-surface-50 dark:hover:bg-surface-700/50 transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-3 max-w-xs">
-                      <p className="text-sm font-semibold text-surface-900 dark:text-white truncate">{c.title}</p>
+                      <p className="text-sm font-semibold text-surface-900 dark:text-white truncate flex items-center gap-1.5">
+                        {c.title}
+                        {c.image && <ImageIcon className="w-3.5 h-3.5 text-surface-400 shrink-0" />}
+                      </p>
                       <p className="text-xs text-surface-400 dark:text-surface-500 truncate">{c.description}</p>
                     </td>
                     <td className="px-4 py-3">
@@ -300,6 +304,18 @@ export function ComplaintsPage() {
                         {statusLabel(c.status)}
                       </span>
                     </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDetail(c);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 text-xs font-semibold hover:bg-brand-50 dark:hover:bg-brand-950/30 hover:text-brand-700 dark:hover:text-brand-300 hover:border-brand-200 dark:hover:border-brand-800 transition-colors"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        Batafsil
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -316,33 +332,76 @@ export function ComplaintsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900">
-              <div>
-                <h3 className="text-base font-bold text-surface-900 dark:text-white">{active.title}</h3>
-                <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
-                  {active.student_name || active.user_username || '—'} &middot; {active.dormitory_name || '—'}
-                  {active.floor_name ? ` (${active.floor_name})` : ''} &middot;{' '}
-                  {active.category_display || CATEGORY_LABEL[active.category] || active.category}
-                </p>
+              <div className="min-w-0">
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase mb-1.5 ${
+                    STATUS_STYLE[active.status] || STATUS_STYLE.pending
+                  }`}
+                >
+                  {statusLabel(active.status)}
+                </span>
+                <h3 className="text-base font-bold text-surface-900 dark:text-white truncate">{active.title}</h3>
               </div>
               <button
                 onClick={() => setActive(null)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700 shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="p-5 space-y-4 max-h-[65vh] overflow-y-auto">
-              <p className="text-sm text-surface-700 dark:text-surface-200 leading-relaxed whitespace-pre-wrap">
-                {active.description}
-              </p>
+              {/* Murojaat ma'lumotlari */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs bg-surface-50 dark:bg-surface-900 rounded-lg p-3.5 border border-surface-100 dark:border-surface-800">
+                <div className="flex items-center gap-1.5 text-surface-500 dark:text-surface-400">
+                  <User className="w-3.5 h-3.5 shrink-0" />
+                  {active.student_name || active.user_username || '—'}
+                  {active.sender_role && (
+                    <span className="text-surface-400">({SENDER_LABEL[active.sender_role] || active.sender_role})</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 text-surface-500 dark:text-surface-400">
+                  <Layers className="w-3.5 h-3.5 shrink-0" />
+                  {active.type_display || TYPE_LABEL[active.type] || active.type} &rarr;{' '}
+                  {active.target_role_display || TARGET_LABEL[active.target_role] || active.target_role}
+                </div>
+                <div className="flex items-center gap-1.5 text-surface-500 dark:text-surface-400">
+                  <Building2 className="w-3.5 h-3.5 shrink-0" />
+                  {active.dormitory_name || '—'}
+                  {active.floor_name ? ` · ${active.floor_name}` : ''}
+                </div>
+                <div className="flex items-center gap-1.5 text-surface-500 dark:text-surface-400">
+                  <Tag className="w-3.5 h-3.5 shrink-0" />
+                  {active.category_display || CATEGORY_LABEL[active.category] || active.category || '—'}
+                </div>
+                <div className="flex items-center gap-1.5 text-surface-500 dark:text-surface-400 col-span-2">
+                  <Calendar className="w-3.5 h-3.5 shrink-0" />
+                  {formatDate(active.created_at)}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-surface-600 dark:text-surface-400 uppercase tracking-wider mb-1.5">
+                  Tavsif
+                </label>
+                <p className="text-sm text-surface-700 dark:text-surface-200 leading-relaxed whitespace-pre-wrap">
+                  {active.description}
+                </p>
+              </div>
 
               {active.image && (
-                <img
-                  src={mediaUrl(active.image)}
-                  alt=""
-                  className="max-h-56 rounded-xl border border-surface-200 dark:border-surface-700"
-                />
+                <div>
+                  <label className="block text-[11px] font-bold text-surface-600 dark:text-surface-400 uppercase tracking-wider mb-1.5">
+                    Rasm
+                  </label>
+                  <a href={mediaUrl(active.image)} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={mediaUrl(active.image)}
+                      alt=""
+                      className="max-h-56 rounded-xl border border-surface-200 dark:border-surface-700 hover:opacity-90 transition-opacity"
+                    />
+                  </a>
+                </div>
               )}
 
               <div>
