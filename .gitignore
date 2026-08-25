@@ -3,3 +3,6 @@ node_modules
 dist
 .DS_Store
 .vercel
+
+# TS incremental build cache
+*.tsbuildinfo

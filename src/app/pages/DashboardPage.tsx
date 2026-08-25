@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Building2, Users, Home, DollarSign, RefreshCw } from 'lucide-react';
 import { KPICard } from '../components/KPICard';
-import { api, unwrapList } from '../../services/api';
+import { DashboardSkeleton } from '../components/Skeleton';
+import { api } from '../../services/api';
 
 type Dash = Record<string, unknown>;
 
@@ -55,24 +56,19 @@ export function DashboardPage() {
   const payments = pick(source, 'payments') as Dash | undefined;
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[40vh] text-gray-500 gap-2">
-        <RefreshCw className="w-5 h-5 animate-spin" />
-        Yuklanmoqda...
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500">Superadmin API statistikasi</p>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">Dashboard</h1>
+          <p className="text-sm text-surface-500 dark:text-surface-400">Tizimning umumiy ko‘rinishi</p>
         </div>
         <button
           onClick={load}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm hover:bg-gray-50"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-surface-200 dark:border-surface-700 text-sm text-surface-700 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors duration-150"
         >
           <RefreshCw className="w-4 h-4" />
           Yangilash
@@ -80,23 +76,23 @@ export function DashboardPage() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+        <div className="mb-4 p-3 rounded-xl bg-danger-50 text-danger-700 text-sm">{error}</div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KPICard
-          title="UNIVERSITETLAR"
+          title="Universitetlar"
           icon={Building2}
-          color="green"
+          color="success"
           stats={[
             { label: 'Jami', value: String(num(pick(universities, 'total', 'count'), num(source.universities_count))) },
             { label: 'Faol', value: String(num(pick(universities, 'active'), num(pick(universities, 'total')))) },
           ]}
         />
         <KPICard
-          title="FOYDALANUVCHILAR"
+          title="Foydalanuvchilar"
           icon={Users}
-          color="blue"
+          color="brand"
           stats={[
             { label: 'Jami', value: String(num(pick(users, 'total', 'count'))) },
             { label: 'Talaba', value: String(num(pick(users, 'students'))) },
@@ -104,9 +100,9 @@ export function DashboardPage() {
           ]}
         />
         <KPICard
-          title="YOTOQXONALAR"
+          title="Yotoqxonalar"
           icon={Home}
-          color="amber"
+          color="warning"
           stats={[
             { label: 'Binolar', value: String(num(pick(dormitories, 'total', 'count'))) },
             { label: 'Xonalar', value: String(num(pick(rooms, 'total'))) },
@@ -114,9 +110,9 @@ export function DashboardPage() {
           ]}
         />
         <KPICard
-          title="ARIZA / TO'LOV"
+          title="Ariza / To‘lov"
           icon={DollarSign}
-          color="red"
+          color="danger"
           stats={[
             { label: 'Arizalar', value: String(num(pick(applications, 'total'))) },
             { label: 'Pending', value: String(num(pick(applications, 'pending'))) },
@@ -125,31 +121,26 @@ export function DashboardPage() {
         />
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-3">Xona bandligi</h2>
+      <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm p-6">
+        <h2 className="font-semibold text-surface-900 dark:text-white mb-4">Xona bandligi</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <p className="text-gray-500">Band</p>
-            <p className="text-xl font-bold">{num(pick(rooms, 'occupied'))}</p>
+            <p className="text-surface-500 dark:text-surface-400">Band</p>
+            <p className="text-xl font-bold text-surface-900 dark:text-white">{num(pick(rooms, 'occupied'))}</p>
           </div>
           <div>
-            <p className="text-gray-500">Bo&apos;sh</p>
-            <p className="text-xl font-bold">{num(pick(rooms, 'free'))}</p>
+            <p className="text-surface-500 dark:text-surface-400">Bo&apos;sh</p>
+            <p className="text-xl font-bold text-surface-900 dark:text-white">{num(pick(rooms, 'free'))}</p>
           </div>
           <div>
-            <p className="text-gray-500">Occupancy</p>
-            <p className="text-xl font-bold">{num(pick(rooms, 'occupancy_rate'))}%</p>
+            <p className="text-surface-500 dark:text-surface-400">Bandlik</p>
+            <p className="text-xl font-bold text-surface-900 dark:text-white">{num(pick(rooms, 'occupancy_rate'))}%</p>
           </div>
           <div>
-            <p className="text-gray-500">Sardorlar</p>
-            <p className="text-xl font-bold">{num(pick(users, 'sardor'))}</p>
+            <p className="text-surface-500 dark:text-surface-400">Sardorlar</p>
+            <p className="text-xl font-bold text-surface-900 dark:text-white">{num(pick(users, 'sardor'))}</p>
           </div>
         </div>
-        {!dash && stats && (
-          <p className="text-xs text-gray-400 mt-4">
-            Superadmin dashboard 403/404 bo&apos;lsa umumiy /stats/ ishlatildi
-          </p>
-        )}
       </div>
     </div>
   );
