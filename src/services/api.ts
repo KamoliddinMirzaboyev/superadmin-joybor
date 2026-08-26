@@ -420,7 +420,9 @@ export const api = {
 
   // Obuna to'lovlari (yotoqxonalarning SaaS tarifiga to'lovlari)
   getSubscriptionPayments: (params?: { dormitory?: number; status?: string; period?: string; ordering?: string; page?: number }) =>
-    apiFetch(`/dormitory-payments/${qs(params)}`),
+    params?.page != null
+      ? apiFetch(`/dormitory-payments/${qs(params)}`)
+      : fetchAllPages('/dormitory-payments/', params),
 
   approveDormitoryPayment: (id: number | string, admin_comment = '') =>
     apiFetch(`/superadmin/dormitory-payments/${id}/approve/`, {
@@ -445,7 +447,10 @@ export const api = {
     category?: string;
     dormitory?: number | string;
     page?: number;
-  }) => apiFetch(`/superadmin/complaints/${qs(params)}`),
+  }) =>
+    params?.page != null
+      ? apiFetch(`/superadmin/complaints/${qs(params)}`)
+      : fetchAllPages('/superadmin/complaints/', params),
 
   respondComplaint: (id: number | string, data: { status?: string; admin_response?: string }) =>
     apiFetch(`/superadmin/complaints/${id}/respond/`, {

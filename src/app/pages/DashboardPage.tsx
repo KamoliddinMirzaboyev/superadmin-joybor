@@ -1,10 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Building2, Users, Home, DollarSign, RefreshCw } from 'lucide-react';
+import { Building2, Users, Home, FileText, MessageSquare, Wallet, RefreshCw } from 'lucide-react';
 import { KPICard } from '../components/KPICard';
 import { DashboardSkeleton } from '../components/Skeleton';
-import { api } from '../../services/api';
+import { api, unwrapList } from '../../services/api';
 
 type Dash = Record<string, unknown>;
+
+interface Complaint {
+  status?: string;
+}
+
+interface SubscriptionPayment {
+  amount?: number;
+  status?: string;
+}
 
 function num(v: unknown, fallback = 0): number {
   const n = Number(v);
@@ -20,9 +29,15 @@ function pick(obj: unknown, ...keys: string[]): unknown {
   return undefined;
 }
 
+function money(n: number): string {
+  return `${n.toLocaleString('uz-UZ').replace(/,/g, ' ')} so'm`;
+}
+
 export function DashboardPage() {
   const [dash, setDash] = useState<Dash | null>(null);
   const [stats, setStats] = useState<Dash | null>(null);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [payments, setPayments] = useState<SubscriptionPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -30,12 +45,16 @@ export function DashboardPage() {
     setLoading(true);
     setError('');
     try {
-      const [d, s] = await Promise.all([
+      const [d, s, c, p] = await Promise.all([
         api.getDashboard().catch(() => null),
         api.getStats().catch(() => null),
+        api.getComplaints().catch(() => []),
+        api.getSubscriptionPayments().catch(() => []),
       ]);
       setDash(d);
       setStats(s);
+      setComplaints(unwrapList<Complaint>(c));
+      setPayments(unwrapList<SubscriptionPayment>(p));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Yuklash xatosi');
     } finally {
@@ -51,9 +70,15 @@ export function DashboardPage() {
   const universities = pick(source, 'universities') as Dash | undefined;
   const users = pick(source, 'users') as Dash | undefined;
   const dormitories = pick(source, 'dormitories') as Dash | undefined;
-  const rooms = pick(source, 'rooms') as Dash | undefined;
   const applications = pick(source, 'applications') as Dash | undefined;
-  const payments = pick(source, 'payments') as Dash | undefined;
+
+  const pendingComplaints = complaints.filter((c) => c.status === 'pending').length;
+  const revenue = payments
+    .filter((p) => p.status === 'APPROVED')
+    .reduce((sum, p) => sum + num(p.amount), 0);
+  const pendingRevenue = payments
+    .filter((p) => p.status === 'PENDING')
+    .reduce((sum, p) => sum + num(p.amount), 0);
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -79,7 +104,7 @@ export function DashboardPage() {
         <div className="mb-4 p-3 rounded-xl bg-danger-50 text-danger-700 text-sm">{error}</div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <KPICard
           title="Universitetlar"
           icon={Building2}
@@ -104,43 +129,37 @@ export function DashboardPage() {
           icon={Home}
           color="warning"
           stats={[
-            { label: 'Binolar', value: String(num(pick(dormitories, 'total', 'count'))) },
-            { label: 'Xonalar', value: String(num(pick(rooms, 'total'))) },
-            { label: "Sig'im", value: String(num(pick(rooms, 'capacity'))) },
+            { label: 'Jami', value: String(num(pick(dormitories, 'total', 'count'))) },
+            { label: 'Faol', value: String(num(pick(dormitories, 'active'), num(pick(dormitories, 'total')))) },
           ]}
         />
         <KPICard
-          title="Ariza / To‘lov"
-          icon={DollarSign}
+          title="Shikoyat va takliflar"
+          icon={MessageSquare}
           color="danger"
           stats={[
-            { label: 'Arizalar', value: String(num(pick(applications, 'total'))) },
-            { label: 'Pending', value: String(num(pick(applications, 'pending'))) },
-            { label: "To'lovlar", value: String(num(pick(payments, 'total', 'count'))) },
+            { label: 'Jami', value: String(complaints.length) },
+            { label: 'Yangi', value: String(pendingComplaints) },
           ]}
         />
-      </div>
-
-      <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm p-6">
-        <h2 className="font-semibold text-surface-900 dark:text-white mb-4">Xona bandligi</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
-            <p className="text-surface-500 dark:text-surface-400">Band</p>
-            <p className="text-xl font-bold text-surface-900 dark:text-white">{num(pick(rooms, 'occupied'))}</p>
-          </div>
-          <div>
-            <p className="text-surface-500 dark:text-surface-400">Bo&apos;sh</p>
-            <p className="text-xl font-bold text-surface-900 dark:text-white">{num(pick(rooms, 'free'))}</p>
-          </div>
-          <div>
-            <p className="text-surface-500 dark:text-surface-400">Bandlik</p>
-            <p className="text-xl font-bold text-surface-900 dark:text-white">{num(pick(rooms, 'occupancy_rate'))}%</p>
-          </div>
-          <div>
-            <p className="text-surface-500 dark:text-surface-400">Sardorlar</p>
-            <p className="text-xl font-bold text-surface-900 dark:text-white">{num(pick(users, 'sardor'))}</p>
-          </div>
-        </div>
+        <KPICard
+          title="Arizalar"
+          icon={FileText}
+          color="info"
+          stats={[
+            { label: 'Jami', value: String(num(pick(applications, 'total'))) },
+            { label: 'Pending', value: String(num(pick(applications, 'pending'))) },
+          ]}
+        />
+        <KPICard
+          title="Platforma daromadi"
+          icon={Wallet}
+          color="success"
+          stats={[
+            { label: 'Tasdiqlangan', value: money(revenue) },
+            { label: 'Kutilmoqda', value: money(pendingRevenue) },
+          ]}
+        />
       </div>
     </div>
   );
