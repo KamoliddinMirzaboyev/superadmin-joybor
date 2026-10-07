@@ -1,4 +1,5 @@
-const API_BASE = 'https://api.joy-bor.uz/api';
+const API_ORIGIN = 'https://joyborv1.pythonanywhere.com';
+const API_BASE = `${API_ORIGIN}/api`;
 
 function getToken(): string | null {
   return sessionStorage.getItem('access');
@@ -187,10 +188,10 @@ function qs(params?: Record<string, string | number | boolean | undefined | null
 export function mediaUrl(url?: string | null): string {
   if (!url) return '';
   if (url.startsWith('//')) return `https:${url}`;
-  if (url.startsWith('http://api.joy-bor.uz')) {
+  if (url.startsWith('http://joyborv1.pythonanywhere.com')) {
     return url.replace('http://', 'https://');
   }
-  if (url.startsWith('/')) return `https://api.joy-bor.uz${url}`;
+  if (url.startsWith('/')) return `${API_ORIGIN}${url}`;
   return url;
 }
 
